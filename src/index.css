@@ -1,0 +1,66 @@
+@import "tailwindcss";
+
+/* 自定义样式可以添加在这里 */
+
+/* 现代化滑块样式 */
+.slider-thumb::-webkit-slider-thumb {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #c23531;
+  cursor: pointer;
+  border: 2px solid white;
+  box-shadow: 0 2px 8px rgba(194, 53, 49, 0.3);
+  transition: all 0.2s ease;
+}
+
+.slider-thumb::-webkit-slider-thumb:hover {
+  background: #d48265;
+  box-shadow: 0 4px 12px rgba(194, 53, 49, 0.4);
+  transform: scale(1.1);
+}
+
+.slider-thumb::-moz-range-thumb {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #c23531;
+  cursor: pointer;
+  border: 2px solid white;
+  box-shadow: 0 2px 8px rgba(194, 53, 49, 0.3);
+  transition: all 0.2s ease;
+}
+
+.slider-thumb::-moz-range-thumb:hover {
+  background: #d48265;
+  box-shadow: 0 4px 12px rgba(194, 53, 49, 0.4);
+  transform: scale(1.1);
+}
+
+/* 美化滚动条 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f5f6f7;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #e8eaed;
+  border-radius: 3px;
+  transition: background 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #c23531;
+}
+
+/* 输入框自动高度调整 */
+textarea {
+  field-sizing: content;
+}
