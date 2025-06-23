@@ -60,6 +60,32 @@
   background: #c23531;
 }
 
+/* 聊天输入框专用滚动条样式 */
+.chat-textarea::-webkit-scrollbar {
+  width: 4px;
+}
+
+.chat-textarea::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 2px;
+}
+
+.chat-textarea::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 2px;
+  border: none;
+}
+
+.chat-textarea::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* Firefox 滚动条样式 */
+.chat-textarea {
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db transparent;
+}
+
 /* 输入框自动高度调整 */
 textarea {
   field-sizing: content;

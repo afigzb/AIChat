@@ -1,0 +1,620 @@
+import { useState, useRef, useEffect } from 'react'
+import type { MessageNode, AIConfig, ChatMode, MessageBubbleProps, BranchNavigation } from './types'
+import { DEFAULT_CONFIG } from './api'
+
+// ===== 公共组件 =====
+
+// 动画点组件 - 统一的加载动画
+const AnimatedDots = ({ size = 'sm' }: { size?: 'sm' | 'md' }) => {
+  const dotSize = size === 'sm' ? 'w-1.5 h-1.5' : 'w-2 h-2'
+  return (
+    <div className="flex gap-1">
+      {[0, 0.1, 0.2].map((delay, i) => (
+        <div 
+          key={i}
+          className={`${dotSize} bg-gray-400 rounded-full animate-bounce`}
+          style={{ animationDelay: `${delay}s` }}
+        />
+      ))}
+    </div>
+  )
+}
+
+// 图标组件
+const Icons = {
+  Settings: () => (
+    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+      <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd"/>
+    </svg>
+  ),
+  Close: () => (
+    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"/>
+    </svg>
+  ),
+  Send: () => (
+    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+      <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"/>
+    </svg>
+  ),
+  Stop: () => (
+    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clipRule="evenodd"/>
+    </svg>
+  ),
+  ChevronDown: () => (
+    <svg className="w-4 h-4 transition-transform" fill="currentColor" viewBox="0 0 20 20">
+      <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd"/>
+    </svg>
+  ),
+  ChevronLeft: () => (
+    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+      <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd"/>
+    </svg>
+  ),
+  ChevronRight: () => (
+    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+      <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"/>
+    </svg>
+  ),
+  Regenerate: () => (
+    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+    </svg>
+  )
+}
+
+// ===== 核心组件 =====
+
+// 分支导航控件
+function BranchNavigation({ navigation, onNavigate }: {
+  navigation: BranchNavigation
+  onNavigate: (direction: 'left' | 'right') => void
+}) {
+  if (navigation.totalBranches <= 1) return null
+
+  return (
+    <div className="flex items-center gap-1 text-xs text-gray-500">
+      <button
+        onClick={() => onNavigate('left')}
+        disabled={!navigation.canNavigateLeft}
+        className={`p-1 rounded transition-colors ${
+          navigation.canNavigateLeft 
+            ? 'hover:bg-gray-100 hover:text-gray-700' 
+            : 'text-gray-300 cursor-not-allowed'
+        }`}
+        title="上一个分支"
+      >
+        <Icons.ChevronLeft />
+      </button>
+      
+      <span className="px-2 py-1 bg-gray-100 rounded text-gray-600 font-medium min-w-[3rem] text-center">
+        {navigation.currentIndex + 1} / {navigation.totalBranches}
+      </span>
+      
+      <button
+        onClick={() => onNavigate('right')}
+        disabled={!navigation.canNavigateRight}
+        className={`p-1 rounded transition-colors ${
+          navigation.canNavigateRight 
+            ? 'hover:bg-gray-100 hover:text-gray-700' 
+            : 'text-gray-300 cursor-not-allowed'
+        }`}
+        title="下一个分支"
+      >
+        <Icons.ChevronRight />
+      </button>
+    </div>
+  )
+}
+
+// 模式切换按钮
+export function ModelToggle({ currentMode, onModeChange, disabled }: {
+  currentMode: ChatMode
+  onModeChange: (mode: ChatMode) => void
+  disabled?: boolean
+}) {
+  return (
+    <button
+      onClick={() => onModeChange(currentMode === 'v3' ? 'r1' : 'v3')}
+      disabled={disabled}
+      className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-sm transition-all ${
+        disabled 
+          ? 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed' 
+          : 'border-gray-200 hover:border-gray-300 bg-white hover:bg-gray-50'
+      }`}
+    >
+      <div className={`w-2 h-2 rounded-full ${currentMode === 'r1' ? 'bg-gray-600' : 'bg-blue-500'}`} />
+      <span className="font-medium text-gray-700">{currentMode.toUpperCase()}</span>
+    </button>
+  )
+}
+
+// 思考过程展示
+function ThinkingContent({ content, isExpanded, onToggle }: {
+  content: string
+  isExpanded: boolean
+  onToggle: () => void
+}) {
+  return (
+    <div className="mb-4">
+      <button
+        onClick={onToggle}
+        className="flex items-center gap-2 px-3 py-2 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg text-gray-600 text-sm font-medium transition-colors"
+      >
+        <div className="w-2 h-2 bg-gray-400 rounded-full" />
+        <span>💭 思考过程</span>
+        <div className={isExpanded ? 'rotate-180' : ''}>
+          <Icons.ChevronDown />
+        </div>
+      </button>
+      
+      {isExpanded && (
+        <div className="mt-3 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+          <div className="text-xs text-gray-600 font-mono leading-relaxed whitespace-pre-wrap">
+            {content}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// 更新后的消息气泡组件
+export function MessageBubble({ 
+  node, 
+  onRegenerate, 
+  branchNavigation, 
+  onBranchNavigate, 
+  isInActivePath, 
+  showBranchControls,
+  isGenerating = false,
+  currentThinking = '',
+  currentAnswer = '',
+  showThinking = false
+}: MessageBubbleProps & {
+  isGenerating?: boolean
+  currentThinking?: string
+  currentAnswer?: string
+  showThinking?: boolean
+}) {
+  const [showThinkingExpanded, setShowThinkingExpanded] = useState(false)
+  const isUser = node.role === 'user'
+  const isLoadingMessage = node.content === '正在生成...'
+  
+  return (
+    <div className={`w-full max-w-4xl mx-auto px-4 py-4 ${
+      isInActivePath ? '' : 'opacity-50'
+    }`}>
+      <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} items-start gap-3`}>
+        <div className="max-w-[85%]">
+          {/* 用户标识 */}
+          <div className={`flex items-center mb-2 ${isUser ? 'justify-end' : ''}`}>
+            <span className="text-sm font-medium text-gray-600">
+              {isUser ? 'You' : 'DeepSeek'}
+            </span>
+            {/* 生成状态指示器 */}
+            {!isUser && isGenerating && (
+              <div className="ml-2 px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full">
+                正在回复...
+              </div>
+            )}
+          </div>
+
+          {/* AI思考过程 - 优先显示实时思考内容 */}
+          {!isUser && (
+            <>
+              {/* 实时思考过程（生成中） */}
+              {isGenerating && currentThinking && showThinking && (
+                <div className="mb-4 bg-gray-50 border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <AnimatedDots />
+                    <span className="text-sm font-medium text-gray-600">💭 AI正在思考</span>
+                  </div>
+                  <div className="text-xs text-gray-600 font-mono leading-relaxed whitespace-pre-wrap">
+                    {currentThinking}
+                    <span className="inline-block w-2 h-4 bg-gray-600 animate-pulse ml-1" />
+                  </div>
+                </div>
+              )}
+              
+              {/* 历史思考过程（已完成） */}
+              {!isGenerating && node.reasoning_content && (
+                <ThinkingContent
+                  content={node.reasoning_content}
+                  isExpanded={showThinkingExpanded}
+                  onToggle={() => setShowThinkingExpanded(!showThinkingExpanded)}
+                />
+              )}
+            </>
+          )}
+          
+          {/* 消息内容 */}
+          <div className={`${
+            isUser
+              ? 'bg-blue-600 text-white rounded-2xl rounded-br-md px-4 py-3'
+              : 'text-gray-800 leading-relaxed'
+          }`}>
+            {/* 显示实时生成内容或最终内容 */}
+            {isGenerating && currentAnswer ? (
+              <div className="whitespace-pre-wrap">
+                {currentAnswer}
+                <span className="inline-block w-2 h-5 bg-gray-600 animate-pulse ml-1" />
+              </div>
+            ) : isLoadingMessage ? (
+              <div className="flex items-center gap-2 p-4 bg-gray-50 rounded-lg">
+                <AnimatedDots />
+                <span className="text-gray-500 text-sm">AI正在准备回复</span>
+              </div>
+            ) : (
+              <div className="whitespace-pre-wrap">{node.content}</div>
+            )}
+          </div>
+          
+          {/* 底部控件区域 */}
+          <div className={`flex items-center mt-2 ${isUser ? 'justify-end' : 'justify-between'}`}>
+            <div className={`text-xs text-gray-400 ${isUser ? '' : 'order-2'}`}>
+              {!isLoadingMessage && node.timestamp.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}
+            </div>
+            
+            {/* 控件组 - 只在非用户消息上显示 */}
+            {!isUser && !isGenerating && (
+              <div className="flex items-center gap-3 order-1">
+                {/* 分支导航 */}
+                {showBranchControls && branchNavigation && onBranchNavigate && (
+                  <BranchNavigation 
+                    navigation={branchNavigation} 
+                    onNavigate={onBranchNavigate} 
+                  />
+                )}
+                
+                {/* 重新生成按钮 */}
+                {onRegenerate && (
+                  <button
+                    onClick={() => onRegenerate(node.id)}
+                    className="flex items-center gap-1 text-xs text-gray-500 hover:text-blue-600 hover:bg-blue-50 px-2 py-1 rounded-md transition-colors"
+                    title="重新生成回答"
+                  >
+                    <Icons.Regenerate />
+                    重新生成
+                  </button>
+                )}
+              </div>
+            )}
+            
+            {/* 用户消息的重新生成（基于用户消息生成新回复） */}
+            {isUser && onRegenerate && !isGenerating && (
+              <button
+                onClick={() => onRegenerate(node.id)}
+                className="flex items-center gap-1 text-xs text-gray-500 hover:text-blue-600 hover:bg-blue-50 px-2 py-1 rounded-md transition-colors ml-2"
+                title="基于此消息重新生成回复"
+              >
+                <Icons.Regenerate />
+                重新生成
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// 加载状态显示
+export function LoadingDisplay({ currentThinking, currentAnswer, currentMode, showThinking }: {
+  currentThinking: string
+  currentAnswer: string
+  currentMode: ChatMode
+  showThinking: boolean
+}) {
+  const hasContent = currentThinking || currentAnswer
+  
+  return (
+    <div className="w-full max-w-4xl mx-auto px-4 py-4">
+      <div className="flex justify-start items-start">
+        <div className="max-w-[85%]">
+          {/* AI标识 */}
+          <div className="flex items-center mb-2">
+            <span className="text-sm font-medium text-gray-900">DeepSeek</span>
+            <div className="ml-2 px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full">
+              正在回复...
+            </div>
+          </div>
+
+          {/* 思考过程 */}
+          {currentMode === 'r1' && showThinking && currentThinking && (
+            <div className="mb-4 bg-gray-50 border border-gray-200 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <AnimatedDots />
+                <span className="text-sm font-medium text-gray-600">💭 AI正在思考</span>
+              </div>
+              <div className="text-xs text-gray-600 font-mono leading-relaxed whitespace-pre-wrap">
+                {currentThinking}
+                <span className="inline-block w-2 h-4 bg-gray-600 animate-pulse ml-1" />
+              </div>
+            </div>
+          )}
+          
+          {/* 答案生成 */}
+          {currentAnswer ? (
+            <div className="text-gray-800 leading-relaxed">
+              <div className="whitespace-pre-wrap">
+                {currentAnswer}
+                <span className="inline-block w-2 h-5 bg-gray-600 animate-pulse ml-1" />
+              </div>
+            </div>
+          ) : !hasContent && (
+            <div className="flex items-center gap-2 p-4 bg-gray-50 rounded-lg">
+              <AnimatedDots />
+              <span className="text-gray-500 text-sm">AI正在准备回复</span>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// 滑块组件
+function Slider({ 
+  label, 
+  value, 
+  onChange, 
+  min = 0, 
+  max = 100, 
+  step = 1, 
+  marks,
+  formatValue = (v) => v.toString()
+}: {
+  label: string
+  value: number
+  onChange: (value: number) => void
+  min?: number
+  max?: number
+  step?: number
+  marks?: string[]
+  formatValue?: (value: number) => string
+}) {
+  return (
+    <div className="space-y-2">
+      <label className="block text-xs font-medium text-gray-600">
+        {label} ({formatValue(value)})
+      </label>
+      <div className="px-3 py-2 bg-gray-50 rounded-lg">
+        <input
+          type="range"
+          min={min}
+          max={max}
+          step={step}
+          value={value}
+          onChange={(e) => onChange(parseFloat(e.target.value))}
+          className="w-full accent-blue-600"
+        />
+        {marks && (
+          <div className="flex justify-between text-xs text-gray-500 mt-1">
+            {marks.map((mark, i) => <span key={i}>{mark}</span>)}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// AI设置面板
+export function AISettings({ config, onConfigChange, onClose, isOpen }: {
+  config: AIConfig
+  onConfigChange: (config: AIConfig) => void
+  onClose: () => void
+  isOpen: boolean
+}) {
+  return (
+    <div className={`fixed top-0 left-0 h-full w-80 bg-white shadow-2xl z-50 border-r border-gray-200 transition-transform duration-300 ${
+      isOpen ? 'translate-x-0' : '-translate-x-full'
+    }`}>
+      <div className="flex flex-col h-full">
+        {/* 头部 */}
+        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center">
+              <Icons.Settings />
+            </div>
+            <h2 className="text-lg font-semibold text-gray-900">模型设置</h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            <Icons.Close />
+          </button>
+        </div>
+
+        {/* 内容区域 */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          {/* V3配置 */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-blue-500" />
+              <h3 className="text-sm font-semibold text-gray-900">DeepSeek-V3 配置</h3>
+            </div>
+            
+            <Slider
+              label="🌡️ 创意度"
+              value={config.v3Config.temperature}
+              onChange={(temperature) => onConfigChange({
+                ...config,
+                v3Config: { ...config.v3Config, temperature }
+              })}
+              min={0}
+              max={2}
+              step={0.1}
+              marks={['0.0 精确', '1.0 均衡', '2.0 创意']}
+            />
+
+            <Slider
+              label="📝 回复长度"
+              value={config.v3Config.maxTokens}
+              onChange={(maxTokens) => onConfigChange({
+                ...config,
+                v3Config: { ...config.v3Config, maxTokens }
+              })}
+              min={100}
+              max={64000}
+              step={100}
+              marks={['100', '8K 推荐', '64K 最大']}
+              formatValue={(v) => v.toLocaleString() + ' tokens'}
+            />
+          </div>
+
+          {/* R1配置 */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-gray-600" />
+              <h3 className="text-sm font-semibold text-gray-900">DeepSeek-R1 配置</h3>
+            </div>
+            
+            <Slider
+              label="📝 回复长度"
+              value={config.r1Config.maxTokens}
+              onChange={(maxTokens) => onConfigChange({
+                ...config,
+                r1Config: { ...config.r1Config, maxTokens }
+              })}
+              min={100}
+              max={64000}
+              step={100}
+              marks={['100', '8K 推荐', '64K 最大']}
+              formatValue={(v) => v.toLocaleString() + ' tokens'}
+            />
+          </div>
+
+          {/* 显示设置 */}
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold text-gray-900">💭 显示设置</h3>
+            <label className="flex items-center justify-between p-3 rounded-lg border cursor-pointer hover:bg-gray-50">
+              <div>
+                <span className="font-medium text-gray-900">显示思考过程</span>
+                <p className="text-xs text-gray-600">在R1模式下显示AI的推理步骤</p>
+              </div>
+              <input
+                type="checkbox"
+                checked={config.showThinking}
+                onChange={(e) => onConfigChange({ ...config, showThinking: e.target.checked })}
+                className="w-4 h-4 text-blue-600 border-2 border-gray-300 rounded"
+              />
+            </label>
+          </div>
+        </div>
+
+        {/* 底部重置按钮 */}
+        <div className="p-6 border-t border-gray-200">
+          <button
+            onClick={() => onConfigChange(DEFAULT_CONFIG)}
+            className="w-full px-4 py-3 text-gray-600 border border-gray-300 rounded-xl hover:bg-gray-50 transition-all font-medium"
+          >
+            重置为默认设置
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// 聊天输入区域
+export function ChatInputArea({ 
+  value, 
+  onChange, 
+  onSend, 
+  isLoading, 
+  onAbort, 
+  currentMode, 
+  onModeChange 
+}: {
+  value: string
+  onChange: (value: string) => void
+  onSend: () => void
+  isLoading: boolean
+  onAbort: () => void
+  currentMode: ChatMode
+  onModeChange: (mode: ChatMode) => void
+}) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      if (isLoading) {
+        onAbort()
+      } else if (value.trim()) {
+        onSend()
+      }
+    }
+  }
+
+  const adjustHeight = (element: HTMLTextAreaElement) => {
+    element.style.height = 'auto'
+    element.style.height = Math.min(element.scrollHeight, 150) + 'px'
+  }
+
+  useEffect(() => {
+    if (!value.trim() && textareaRef.current) {
+      textareaRef.current.style.height = '60px'
+    }
+  }, [value])
+
+  const canSend = !isLoading && value.trim()
+
+  return (
+    <div className="bg-white sticky bottom-0">
+      <div className="max-w-4xl mx-auto p-6">
+        <div className="border border-gray-200 rounded-2xl bg-white shadow-sm hover:shadow-md focus-within:shadow-md focus-within:border-gray-400 transition-all">
+          {/* 文本输入 */}
+          <div className="p-4">
+            <textarea
+              ref={textareaRef}
+              value={value}
+              onChange={(e) => {
+                onChange(e.target.value)
+                adjustHeight(e.target)
+              }}
+              onKeyPress={handleKeyPress}
+              placeholder="发送消息给 DeepSeek Assistant..."
+              className="w-full bg-transparent border-none focus:outline-none resize-none placeholder-gray-500 text-gray-900 leading-relaxed min-h-[60px] max-h-[150px]"
+              disabled={isLoading}
+            />
+          </div>
+
+          {/* 底部控制栏 */}
+          <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 bg-gray-50 rounded-b-2xl">
+            {/* 左侧 */}
+            <div className="flex items-center gap-3">
+              <ModelToggle currentMode={currentMode} onModeChange={onModeChange} disabled={isLoading} />
+              
+              {isLoading && (
+                <div className="flex items-center gap-2">
+                  <AnimatedDots size="sm" />
+                  <span className="text-xs text-gray-500">AI正在回复中...</span>
+                </div>
+              )}
+            </div>
+
+            {/* 右侧发送按钮 */}
+            <button
+              onClick={isLoading ? onAbort : onSend}
+              disabled={!isLoading && !canSend}
+              className={`px-4 py-2 rounded-lg transition-all text-sm font-medium flex items-center gap-2 ${
+                isLoading 
+                  ? 'bg-gray-600 text-white hover:bg-gray-700'
+                  : canSend
+                    ? 'bg-gray-900 text-white hover:bg-gray-800'
+                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+              }`}
+            >
+              {isLoading ? <Icons.Stop /> : <Icons.Send />}
+              <span>{isLoading ? '停止' : '发送'}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+} 

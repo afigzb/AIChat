@@ -1,65 +1,53 @@
 import { useState } from 'react'
-import ChatPage from './ChatPage'
-import { HomePage, ApiKeySetup } from './components'
-import { useUserData } from './hooks'
-import type { PageType } from './types'
+import { ChatPage } from './chat'
+
+type PageType = 'home' | 'chat'
 
 function App() {
   const [currentPage, setCurrentPage] = useState<PageType>('home')
-  const { userData, updateUserData, hasApiKey, chatConfig } = useUserData()
 
   const handleEnterChat = () => {
-    if (hasApiKey) {
-      setCurrentPage('chat')
-    } else {
-      setCurrentPage('setup')
-    }
-  }
-
-  const handleSaveApiKey = async (apiKey: string) => {
-    const success = await updateUserData({ apiKey })
-    if (success) {
-      setCurrentPage('chat')
-    } else {
-      throw new Error('保存失败')
-    }
+    setCurrentPage('chat')
   }
 
   const handleBackToHome = () => {
     setCurrentPage('home')
   }
 
-  // 路由渲染
-  switch (currentPage) {
-    case 'setup':
-      return (
-        <ApiKeySetup
-          onSave={handleSaveApiKey}
-          onCancel={handleBackToHome}
-        />
-      )
-
-    case 'chat':
-      if (!userData?.apiKey) {
-        setCurrentPage('setup')
-        return null
-      }
-      return (
-        <ChatPage
-          apiKey={userData.apiKey}
-          onBack={handleBackToHome}
-        />
-      )
-
-    default:
-      return (
-        <HomePage
-          onEnterChat={handleEnterChat}
-          onSetupApiKey={() => setCurrentPage('setup')}
-          hasApiKey={hasApiKey}
-        />
-      )
+  if (currentPage === 'chat') {
+    return <ChatPage onBack={handleBackToHome} />
   }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col items-center justify-center p-8">
+      <div className="text-center space-y-8 max-w-4xl mx-auto">
+        <div className="mb-12">
+          <h1 className="text-5xl font-bold text-gray-800 mb-4">
+            React 应用
+          </h1>
+          <p className="text-xl text-gray-600">
+            一个基于 React + TypeScript + Tailwind CSS 的现代化应用
+          </p>
+        </div>
+        
+        <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md mx-auto space-y-4">
+          <h2 className="text-2xl font-semibold text-gray-800 mb-4">
+            欢迎使用
+          </h2>
+          <p className="text-gray-600 mb-6">
+            这是一个干净的 React 应用模板，现在包含 DeepSeek AI 聊天功能。
+          </p>
+          
+          <button
+            onClick={handleEnterChat}
+            className="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-6 rounded-lg transition-colors duration-200"
+          >
+            进入 AI 聊天
+          </button>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 export default App
