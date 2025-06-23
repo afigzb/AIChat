@@ -60,27 +60,19 @@ function buildRequestBody(
 
 // 处理流式响应数据
 function parseStreamChunk(chunk: string): Array<{ reasoning_content?: string; content?: string }> {
-  const lines = chunk.split('\n')
-  const results: Array<{ reasoning_content?: string; content?: string }> = []
-  
-  for (const line of lines) {
-    if (!line.startsWith('data: ')) continue
-    
-    const data = line.slice(6).trim()
-    if (data === '[DONE]') continue
-
-    try {
-      const parsed: DeepSeekStreamResponse = JSON.parse(data)
-      const delta = parsed.choices[0]?.delta
-      if (delta) {
-        results.push(delta)
+  return chunk.split('\n')
+    .filter(line => line.startsWith('data: '))
+    .map(line => line.slice(6).trim())
+    .filter(data => data !== '[DONE]')
+    .map(data => {
+      try {
+        const parsed: DeepSeekStreamResponse = JSON.parse(data)
+        return parsed.choices[0]?.delta || {}
+      } catch {
+        return {}
       }
-    } catch (e) {
-      console.warn('解析响应数据失败:', e, data)
-    }
-  }
-  
-  return results
+    })
+    .filter(delta => delta.reasoning_content || delta.content)
 }
 
 // 调用DeepSeek API
@@ -93,28 +85,22 @@ export async function callDeepSeekAPI(
   onAnswerUpdate: (answer: string) => void
 ): Promise<{ reasoning_content?: string; content: string }> {
   
-  const requestBody = buildRequestBody(messages, currentMode, config)
-
   const response = await fetch(API_BASE_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${API_KEY}`
     },
-    body: JSON.stringify(requestBody),
+    body: JSON.stringify(buildRequestBody(messages, currentMode, config)),
     signal: abortSignal
   })
 
   if (!response.ok) {
-    const errorText = await response.text()
-    console.error('API错误响应:', errorText)
-    throw new Error(`API 请求失败: ${response.status} ${response.statusText}`)
+    throw new Error(`API 请求失败: ${response.status}`)
   }
 
   const reader = response.body?.getReader()
-  if (!reader) {
-    throw new Error('无法获取响应流')
-  }
+  if (!reader) throw new Error('无法获取响应流')
 
   let reasoning_content = ''
   let content = ''
@@ -124,17 +110,12 @@ export async function callDeepSeekAPI(
       const { done, value } = await reader.read()
       if (done) break
 
-      const chunk = new TextDecoder().decode(value)
-      const deltas = parseStreamChunk(chunk)
-
+      const deltas = parseStreamChunk(new TextDecoder().decode(value))
       for (const delta of deltas) {
-        // 处理思考过程
         if (delta.reasoning_content) {
           reasoning_content += delta.reasoning_content
           onThinkingUpdate(reasoning_content)
         }
-        
-        // 处理最终答案
         if (delta.content) {
           content += delta.content
           onAnswerUpdate(content)

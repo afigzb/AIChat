@@ -20,46 +20,36 @@ const AnimatedDots = ({ size = 'sm' }: { size?: 'sm' | 'md' }) => {
   )
 }
 
-// 图标组件
-const Icons = {
-  Settings: () => (
-    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-      <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd"/>
-    </svg>
-  ),
-  Close: () => (
-    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"/>
-    </svg>
-  ),
-  Send: () => (
-    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-      <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"/>
-    </svg>
-  ),
-  Stop: () => (
-    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clipRule="evenodd"/>
-    </svg>
-  ),
-  ChevronDown: () => (
-    <svg className="w-4 h-4 transition-transform" fill="currentColor" viewBox="0 0 20 20">
-      <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd"/>
-    </svg>
-  ),
-  ChevronLeft: () => (
-    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-      <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd"/>
-    </svg>
-  ),
-  ChevronRight: () => (
-    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-      <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"/>
-    </svg>
-  ),
-  Regenerate: () => (
-    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+// 合并的图标组件
+type IconName = 'settings' | 'close' | 'send' | 'stop' | 'chevronDown' | 'chevronLeft' | 'chevronRight' | 'regenerate' | 'edit'
+
+const Icon = ({ name, className = "w-4 h-4" }: { name: IconName; className?: string }) => {
+  const icons: Record<string, string> = {
+    settings: "M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z",
+    close: "M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z",
+    send: "M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z",
+    stop: "M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z",
+    chevronDown: "M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z",
+    chevronLeft: "M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z",
+    chevronRight: "M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+  }
+
+  const strokeIcons: Record<string, string> = {
+    regenerate: "M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15",
+    edit: "M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+  }
+
+  if (strokeIcons[name]) {
+    return (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={strokeIcons[name]} />
+      </svg>
+    )
+  }
+
+  return (
+    <svg className={className} fill="currentColor" viewBox="0 0 20 20">
+      <path fillRule="evenodd" d={icons[name]} clipRule="evenodd"/>
     </svg>
   )
 }
@@ -85,7 +75,7 @@ function BranchNavigation({ navigation, onNavigate }: {
         }`}
         title="上一个分支"
       >
-        <Icons.ChevronLeft />
+        <Icon name="chevronLeft" />
       </button>
       
       <span className="px-2 py-1 bg-gray-100 rounded text-gray-600 font-medium min-w-[3rem] text-center">
@@ -102,7 +92,7 @@ function BranchNavigation({ navigation, onNavigate }: {
         }`}
         title="下一个分支"
       >
-        <Icons.ChevronRight />
+        <Icon name="chevronRight" />
       </button>
     </div>
   )
@@ -145,7 +135,7 @@ function ThinkingContent({ content, isExpanded, onToggle }: {
         <div className="w-2 h-2 bg-gray-400 rounded-full" />
         <span>💭 思考过程</span>
         <div className={isExpanded ? 'rotate-180' : ''}>
-          <Icons.ChevronDown />
+          <Icon name="chevronDown" />
         </div>
       </button>
       
@@ -160,10 +150,11 @@ function ThinkingContent({ content, isExpanded, onToggle }: {
   )
 }
 
-// 更新后的消息气泡组件
+// 优化后的消息气泡组件
 export function MessageBubble({ 
   node, 
   onRegenerate, 
+  onEditUserMessage,
   branchNavigation, 
   onBranchNavigate, 
   isInActivePath, 
@@ -172,20 +163,26 @@ export function MessageBubble({
   currentThinking = '',
   currentAnswer = '',
   showThinking = false
-}: MessageBubbleProps & {
-  isGenerating?: boolean
-  currentThinking?: string
-  currentAnswer?: string
-  showThinking?: boolean
-}) {
+}: MessageBubbleProps) {
   const [showThinkingExpanded, setShowThinkingExpanded] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
+  const [editContent, setEditContent] = useState(node.content)
   const isUser = node.role === 'user'
-  const isLoadingMessage = node.content === '正在生成...'
+
+  const handleEditSave = () => {
+    if (editContent.trim() && editContent.trim() !== node.content && onEditUserMessage) {
+      onEditUserMessage(node.id, editContent.trim())
+    }
+    setIsEditing(false)
+  }
+
+  const handleEditCancel = () => {
+    setEditContent(node.content)
+    setIsEditing(false)
+  }
   
   return (
-    <div className={`w-full max-w-4xl mx-auto px-4 py-4 ${
-      isInActivePath ? '' : 'opacity-50'
-    }`}>
+    <div className={`w-full max-w-4xl mx-auto px-4 py-4 ${isInActivePath ? '' : 'opacity-50'}`}>
       <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} items-start gap-3`}>
         <div className="max-w-[85%]">
           {/* 用户标识 */}
@@ -193,7 +190,6 @@ export function MessageBubble({
             <span className="text-sm font-medium text-gray-600">
               {isUser ? 'You' : 'DeepSeek'}
             </span>
-            {/* 生成状态指示器 */}
             {!isUser && isGenerating && (
               <div className="ml-2 px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full">
                 正在回复...
@@ -201,10 +197,9 @@ export function MessageBubble({
             )}
           </div>
 
-          {/* AI思考过程 - 优先显示实时思考内容 */}
+          {/* AI思考过程 */}
           {!isUser && (
             <>
-              {/* 实时思考过程（生成中） */}
               {isGenerating && currentThinking && showThinking && (
                 <div className="mb-4 bg-gray-50 border border-gray-200 rounded-lg p-4">
                   <div className="flex items-center gap-2 mb-3">
@@ -218,7 +213,6 @@ export function MessageBubble({
                 </div>
               )}
               
-              {/* 历史思考过程（已完成） */}
               {!isGenerating && node.reasoning_content && (
                 <ThinkingContent
                   content={node.reasoning_content}
@@ -235,120 +229,95 @@ export function MessageBubble({
               ? 'bg-blue-600 text-white rounded-2xl rounded-br-md px-4 py-3'
               : 'text-gray-800 leading-relaxed'
           }`}>
-            {/* 显示实时生成内容或最终内容 */}
-            {isGenerating && currentAnswer ? (
-              <div className="whitespace-pre-wrap">
-                {currentAnswer}
-                <span className="inline-block w-2 h-5 bg-gray-600 animate-pulse ml-1" />
-              </div>
-            ) : isLoadingMessage ? (
-              <div className="flex items-center gap-2 p-4 bg-gray-50 rounded-lg">
-                <AnimatedDots />
-                <span className="text-gray-500 text-sm">AI正在准备回复</span>
+            {isGenerating ? (
+              currentAnswer ? (
+                <div className="whitespace-pre-wrap">
+                  {currentAnswer}
+                  <span className="inline-block w-2 h-5 bg-gray-600 animate-pulse ml-1" />
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 p-4 bg-gray-50 rounded-lg">
+                  <AnimatedDots />
+                  <span className="text-gray-500 text-sm">AI正在准备回复</span>
+                </div>
+              )
+            ) : isUser && isEditing ? (
+              <div className="space-y-2">
+                <textarea
+                  value={editContent}
+                  onChange={(e) => setEditContent(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault()
+                      handleEditSave()
+                    } else if (e.key === 'Escape') {
+                      handleEditCancel()
+                    }
+                  }}
+                  className="w-full bg-blue-700 text-white placeholder-blue-200 border border-blue-400 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-300 resize-none"
+                  placeholder="修改消息内容..."
+                  rows={Math.max(2, editContent.split('\n').length)}
+                  autoFocus
+                />
+                <div className="flex gap-2">
+                  <button onClick={handleEditSave} className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-sm rounded-md transition-colors">
+                    保存
+                  </button>
+                  <button onClick={handleEditCancel} className="px-3 py-1 bg-gray-600 hover:bg-gray-700 text-white text-sm rounded-md transition-colors">
+                    取消
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="whitespace-pre-wrap">{node.content}</div>
             )}
           </div>
           
-          {/* 底部控件区域 */}
-          <div className={`flex items-center mt-2 ${isUser ? 'justify-end' : 'justify-between'}`}>
+          {/* 底部控件 */}
+          <div className={`flex items-center mt-2 ${isUser ? 'justify-between' : 'justify-between'}`}>
             <div className={`text-xs text-gray-400 ${isUser ? '' : 'order-2'}`}>
-              {!isLoadingMessage && node.timestamp.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}
+              {node.content !== '正在生成...' && node.timestamp.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}
             </div>
             
-            {/* 控件组 - 只在非用户消息上显示 */}
             {!isUser && !isGenerating && (
               <div className="flex items-center gap-3 order-1">
-                {/* 分支导航 */}
                 {showBranchControls && branchNavigation && onBranchNavigate && (
-                  <BranchNavigation 
-                    navigation={branchNavigation} 
-                    onNavigate={onBranchNavigate} 
-                  />
+                  <BranchNavigation navigation={branchNavigation} onNavigate={onBranchNavigate} />
                 )}
-                
-                {/* 重新生成按钮 */}
                 {onRegenerate && (
                   <button
                     onClick={() => onRegenerate(node.id)}
                     className="flex items-center gap-1 text-xs text-gray-500 hover:text-blue-600 hover:bg-blue-50 px-2 py-1 rounded-md transition-colors"
                     title="重新生成回答"
                   >
-                    <Icons.Regenerate />
+                    <Icon name="regenerate" className="w-3 h-3" />
                     重新生成
                   </button>
                 )}
               </div>
             )}
             
-            {/* 用户消息的重新生成（基于用户消息生成新回复） */}
-            {isUser && onRegenerate && !isGenerating && (
-              <button
-                onClick={() => onRegenerate(node.id)}
-                className="flex items-center gap-1 text-xs text-gray-500 hover:text-blue-600 hover:bg-blue-50 px-2 py-1 rounded-md transition-colors ml-2"
-                title="基于此消息重新生成回复"
-              >
-                <Icons.Regenerate />
-                重新生成
-              </button>
+            {isUser && !isGenerating && !isEditing && (
+              <div className="flex items-center gap-3">
+                {showBranchControls && branchNavigation && onBranchNavigate && (
+                  <BranchNavigation navigation={branchNavigation} onNavigate={onBranchNavigate} />
+                )}
+                {onEditUserMessage && (
+                  <button
+                    onClick={() => {
+                      setEditContent(node.content)
+                      setIsEditing(true)
+                    }}
+                    className="flex items-center gap-1 text-xs text-gray-500 hover:text-blue-600 hover:bg-blue-50 px-2 py-1 rounded-md transition-colors"
+                    title="修改消息内容并重新生成AI回复"
+                  >
+                    <Icon name="edit" className="w-3 h-3" />
+                    修改并重新生成
+                  </button>
+                )}
+              </div>
             )}
           </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// 加载状态显示
-export function LoadingDisplay({ currentThinking, currentAnswer, currentMode, showThinking }: {
-  currentThinking: string
-  currentAnswer: string
-  currentMode: ChatMode
-  showThinking: boolean
-}) {
-  const hasContent = currentThinking || currentAnswer
-  
-  return (
-    <div className="w-full max-w-4xl mx-auto px-4 py-4">
-      <div className="flex justify-start items-start">
-        <div className="max-w-[85%]">
-          {/* AI标识 */}
-          <div className="flex items-center mb-2">
-            <span className="text-sm font-medium text-gray-900">DeepSeek</span>
-            <div className="ml-2 px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full">
-              正在回复...
-            </div>
-          </div>
-
-          {/* 思考过程 */}
-          {currentMode === 'r1' && showThinking && currentThinking && (
-            <div className="mb-4 bg-gray-50 border border-gray-200 rounded-lg p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <AnimatedDots />
-                <span className="text-sm font-medium text-gray-600">💭 AI正在思考</span>
-              </div>
-              <div className="text-xs text-gray-600 font-mono leading-relaxed whitespace-pre-wrap">
-                {currentThinking}
-                <span className="inline-block w-2 h-4 bg-gray-600 animate-pulse ml-1" />
-              </div>
-            </div>
-          )}
-          
-          {/* 答案生成 */}
-          {currentAnswer ? (
-            <div className="text-gray-800 leading-relaxed">
-              <div className="whitespace-pre-wrap">
-                {currentAnswer}
-                <span className="inline-block w-2 h-5 bg-gray-600 animate-pulse ml-1" />
-              </div>
-            </div>
-          ) : !hasContent && (
-            <div className="flex items-center gap-2 p-4 bg-gray-50 rounded-lg">
-              <AnimatedDots />
-              <span className="text-gray-500 text-sm">AI正在准备回复</span>
-            </div>
-          )}
         </div>
       </div>
     </div>
@@ -412,11 +381,10 @@ export function AISettings({ config, onConfigChange, onClose, isOpen }: {
       isOpen ? 'translate-x-0' : '-translate-x-full'
     }`}>
       <div className="flex flex-col h-full">
-        {/* 头部 */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center">
-              <Icons.Settings />
+              <Icon name="settings" className="w-5 h-5 text-white" />
             </div>
             <h2 className="text-lg font-semibold text-gray-900">模型设置</h2>
           </div>
@@ -424,11 +392,10 @@ export function AISettings({ config, onConfigChange, onClose, isOpen }: {
             onClick={onClose}
             className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors"
           >
-            <Icons.Close />
+            <Icon name="close" className="w-5 h-5" />
           </button>
         </div>
 
-        {/* 内容区域 */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {/* V3配置 */}
           <div className="space-y-3">
@@ -505,7 +472,6 @@ export function AISettings({ config, onConfigChange, onClose, isOpen }: {
           </div>
         </div>
 
-        {/* 底部重置按钮 */}
         <div className="p-6 border-t border-gray-200">
           <button
             onClick={() => onConfigChange(DEFAULT_CONFIG)}
@@ -567,7 +533,6 @@ export function ChatInputArea({
     <div className="bg-white sticky bottom-0">
       <div className="max-w-4xl mx-auto p-6">
         <div className="border border-gray-200 rounded-2xl bg-white shadow-sm hover:shadow-md focus-within:shadow-md focus-within:border-gray-400 transition-all">
-          {/* 文本输入 */}
           <div className="p-4">
             <textarea
               ref={textareaRef}
@@ -583,9 +548,7 @@ export function ChatInputArea({
             />
           </div>
 
-          {/* 底部控制栏 */}
           <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 bg-gray-50 rounded-b-2xl">
-            {/* 左侧 */}
             <div className="flex items-center gap-3">
               <ModelToggle currentMode={currentMode} onModeChange={onModeChange} disabled={isLoading} />
               
@@ -597,7 +560,6 @@ export function ChatInputArea({
               )}
             </div>
 
-            {/* 右侧发送按钮 */}
             <button
               onClick={isLoading ? onAbort : onSend}
               disabled={!isLoading && !canSend}
@@ -609,7 +571,7 @@ export function ChatInputArea({
                     : 'bg-gray-200 text-gray-400 cursor-not-allowed'
               }`}
             >
-              {isLoading ? <Icons.Stop /> : <Icons.Send />}
+              <Icon name={isLoading ? 'stop' : 'send'} />
               <span>{isLoading ? '停止' : '发送'}</span>
             </button>
           </div>

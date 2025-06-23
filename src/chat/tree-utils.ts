@@ -37,28 +37,20 @@ export function buildTreeFromFlat(flatMessages: Map<string, FlatMessage>): Messa
   const nodes = new Map<string, MessageNode>()
   const roots: MessageNode[] = []
 
-  // 第一遍：创建所有节点
+  // 创建所有节点
   for (const [id, message] of flatMessages) {
     nodes.set(id, {
-      id: message.id,
-      content: message.content,
-      role: message.role,
-      timestamp: message.timestamp,
-      reasoning_content: message.reasoning_content,
-      parentId: message.parentId,
+      ...message,
       children: [],
-      depth: 0 // 稍后计算
+      depth: 0
     })
   }
 
-  // 第二遍：建立父子关系并计算深度
+  // 建立父子关系
   for (const [id, node] of nodes) {
     if (node.parentId === null) {
-      // 根节点
-      node.depth = 0
       roots.push(node)
     } else {
-      // 子节点
       const parent = nodes.get(node.parentId)
       if (parent) {
         parent.children.push(node)
@@ -67,12 +59,13 @@ export function buildTreeFromFlat(flatMessages: Map<string, FlatMessage>): Messa
     }
   }
 
-  // 对每个节点的子节点按时间排序
+  // 排序子节点
+  const sortByTime = (a: MessageNode, b: MessageNode) => a.timestamp.getTime() - b.timestamp.getTime()
   for (const node of nodes.values()) {
-    node.children.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
+    node.children.sort(sortByTime)
   }
 
-  return roots.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
+  return roots.sort(sortByTime)
 }
 
 // 从根节点构建节点映射（避免重复遍历）
@@ -89,14 +82,8 @@ export function buildNodeMap(roots: MessageNode[]): Map<string, MessageNode> {
 }
 
 // 在树中查找节点（使用预构建的节点映射）
-export function findNode(nodeId: string, nodeMapOrRoots: Map<string, MessageNode> | MessageNode[]): MessageNode | null {
-  if (nodeMapOrRoots instanceof Map) {
-    return nodeMapOrRoots.get(nodeId) || null
-  } else {
-    // 如果传入的是roots，临时构建映射
-    const nodeMap = buildNodeMap(nodeMapOrRoots)
-    return nodeMap.get(nodeId) || null
-  }
+export function findNode(nodeId: string, roots: MessageNode[]): MessageNode | null {
+  return buildNodeMap(roots).get(nodeId) || null
 }
 
 // ===== 路径管理 =====
@@ -131,9 +118,9 @@ export function getActiveNodesFromPath(activePath: string[], roots: MessageNode[
     .filter((node): node is MessageNode => node !== undefined)
 }
 
-// ===== 分支导航 =====
+// ===== 分支导航（优化版本） =====
 
-// 获取分支导航信息
+// 获取分支导航信息 - 使用缓存的节点映射
 export function getBranchNavigation(nodeId: string, activePath: string[], roots: MessageNode[]): BranchNavigation {
   const nodeMap = buildNodeMap(roots)
   const node = nodeMap.get(nodeId)
@@ -142,29 +129,20 @@ export function getBranchNavigation(nodeId: string, activePath: string[], roots:
     return { currentIndex: 0, totalBranches: 1, canNavigateLeft: false, canNavigateRight: false }
   }
 
-  // 如果是根节点，检查根节点列表
+  let siblings: MessageNode[]
   if (node.parentId === null) {
-    const currentIndex = roots.findIndex(root => root.id === nodeId)
-    return {
-      currentIndex,
-      totalBranches: roots.length,
-      canNavigateLeft: currentIndex > 0,
-      canNavigateRight: currentIndex < roots.length - 1
-    }
+    siblings = roots
+  } else {
+    const parent = nodeMap.get(node.parentId)
+    siblings = parent?.children || [node]
   }
 
-  // 查找父节点
-  const parent = nodeMap.get(node.parentId)
-  if (!parent) {
-    return { currentIndex: 0, totalBranches: 1, canNavigateLeft: false, canNavigateRight: false }
-  }
-
-  const currentIndex = parent.children.findIndex(child => child.id === nodeId)
+  const currentIndex = siblings.findIndex(sibling => sibling.id === nodeId)
   return {
     currentIndex,
-    totalBranches: parent.children.length,
+    totalBranches: siblings.length,
     canNavigateLeft: currentIndex > 0,
-    canNavigateRight: currentIndex < parent.children.length - 1
+    canNavigateRight: currentIndex < siblings.length - 1
   }
 }
 
@@ -191,7 +169,7 @@ export function navigateBranch(
     return null // 无法导航
   }
 
-  // 获取目标兄弟节点
+  // 获取兄弟节点
   let siblings: MessageNode[]
   if (node.parentId === null) {
     siblings = roots
@@ -208,25 +186,21 @@ export function navigateBranch(
   const nodeIndex = activePath.findIndex(id => id === nodeId)
   if (nodeIndex === -1) return null
 
-  // 正确的分支切换逻辑：
+  // 分支切换逻辑：
   // 1. 保留到切换节点之前的路径
   // 2. 切换到目标兄弟节点
-  // 3. 在新分支中找到最深的可用路径（利用现有的树结构）
+  // 3. 在新分支中找到最深的可用路径
   const pathBeforeNode = activePath.slice(0, nodeIndex)
   const newBasePath = [...pathBeforeNode, targetSibling.id]
   
-  // 在目标分支中找到最深的路径
-  const deepestPath = findDeepestPathInBranch(targetSibling)
+  // 找到最深路径
+  const deepestPath = findDeepestPath(targetSibling)
   
   return [...newBasePath, ...deepestPath]
 }
 
-/**
- * 在给定分支中找到最深的路径
- * 策略：沿着每层最新的子节点向下走，直到叶子节点
- * 这样能更好地反映用户的最新对话状态
- */
-function findDeepestPathInBranch(branchRoot: MessageNode): string[] {
+// 在给定分支中找到最深的路径
+function findDeepestPath(branchRoot: MessageNode): string[] {
   const deepPath: string[] = []
   let currentNode = branchRoot
   
@@ -273,7 +247,7 @@ export function getRegenerateContext(nodeId: string, flatMessages: Map<string, F
     ? targetMessage.parentId || '' 
     : nodeId
 
-  // 获取到父节点为止的对话历史（已优化：直接使用扁平结构追溯）
+  // 获取到父节点为止的对话历史
   const conversationHistory = parentNodeId 
     ? getConversationHistory(parentNodeId, flatMessages)
     : []
@@ -299,6 +273,41 @@ export function addMessageToTree(
 
   // 更新激活路径
   const newActivePath = [...activePath, newMessage.id]
+
+  return { newFlatMessages, newActivePath }
+}
+
+// 编辑用户消息（创建新分支）
+export function editUserMessage(
+  flatMessages: Map<string, FlatMessage>,
+  activePath: string[],
+  targetNodeId: string,
+  newContent: string
+): { newFlatMessages: Map<string, FlatMessage>, newActivePath: string[] } | null {
+  const targetMessage = flatMessages.get(targetNodeId)
+  if (!targetMessage || targetMessage.role !== 'user') {
+    return null
+  }
+
+  // 创建编辑后的新用户消息（作为兄弟节点）
+  const editedMessage = createFlatMessage(newContent.trim(), 'user', targetMessage.parentId)
+  
+  // 复制现有的扁平消息映射并添加新消息
+  const newFlatMessages = new Map(flatMessages)
+  newFlatMessages.set(editedMessage.id, editedMessage)
+
+  // 计算新的激活路径
+  const targetNodeIndex = activePath.indexOf(targetNodeId)
+  if (targetNodeIndex === -1) {
+    // 如果目标节点不在当前路径中，直接添加到路径末尾
+    return { newFlatMessages, newActivePath: [...activePath, editedMessage.id] }
+  }
+
+  // 替换路径中的目标节点为新编辑的消息，并移除后续节点
+  const newActivePath = [
+    ...activePath.slice(0, targetNodeIndex),
+    editedMessage.id
+  ]
 
   return { newFlatMessages, newActivePath }
 }

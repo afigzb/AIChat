@@ -1,28 +1,13 @@
 import { useState, useRef, useEffect } from 'react'
 import type { 
   ChatPageProps, 
-  FlatMessage, 
-  MessageNode, 
-  ConversationTree, 
   AIConfig, 
-  ChatMode,
-  BranchNavigation
+  ChatMode
 } from './types'
-import { callDeepSeekAPI, DEFAULT_CONFIG } from './api'
-import { MessageBubble, AISettings, LoadingDisplay, ChatInputArea } from './components'
-import {
-  createInitialConversationTree,
-  createFlatMessage,
-  buildTreeFromFlat,
-  buildNodeMap,
-  getActiveNodesFromPath,
-  getBranchNavigation,
-  navigateBranch,
-  getConversationHistory,
-  addMessageToTree,
-  getRegenerateContext,
-  findNode
-} from './tree-utils'
+import { DEFAULT_CONFIG } from './api'
+import { MessageBubble, AISettings, ChatInputArea } from './components'
+import { useConversationManager } from './conversation-manager'
+import { useBranchManager } from './branch-manager'
 
 // 设置按钮组件
 function SettingsButton({ isOpen, onClick }: { isOpen: boolean; onClick: () => void }) {
@@ -59,300 +44,41 @@ function Header({ onBack }: { onBack: () => void }) {
 }
 
 export default function ChatPage({ onBack }: ChatPageProps) {
-  // 核心状态：对话树
-  const [conversationTree, setConversationTree] = useState<ConversationTree>(() =>
-    createInitialConversationTree('你好！这里是个人ai聊天工具，调用deepseekapi接口，纯前端设计，无保存对话功能')
-  )
-
   // UI状态
-  const [inputValue, setInputValue] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
   const [config, setConfig] = useState<AIConfig>(DEFAULT_CONFIG)
   const [currentMode, setCurrentMode] = useState<ChatMode>('r1')
   const [showSettings, setShowSettings] = useState(false)
-  const [currentThinking, setCurrentThinking] = useState('')
-  const [currentAnswer, setCurrentAnswer] = useState('')
   
   // Refs
-  const abortControllerRef = useRef<AbortController | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  // 对话管理器（现在包含重新生成功能）
+  const {
+    state: conversationState,
+    actions: conversationActions,
+    activeNodes,
+    regenerateMessage
+  } = useConversationManager(config, currentMode)
+
+  // 分支管理器
+  const branchManager = useBranchManager({
+    conversationTree: conversationState.conversationTree,
+    updateActivePath: conversationActions.updateActivePath
+  })
 
   // 自动滚动到底部
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [conversationTree.activePath])
-
-  // 清理流式状态
-  const clearStreamState = () => {
-    setCurrentThinking('')
-    setCurrentAnswer('')
-  }
-
-  // 中断请求
-  const abortRequest = () => {
-    if (!abortControllerRef.current) return
-    
-    abortControllerRef.current.abort()
-    abortControllerRef.current = null
-    setIsLoading(false)
-    
-    // 保存已生成的内容
-    const content = currentAnswer.trim() || '生成被中断'
-    const reasoning = currentThinking.trim() || undefined
-    
-    if (content || reasoning) {
-      const lastNodeId = conversationTree.activePath[conversationTree.activePath.length - 1]
-      const newMessage = createFlatMessage(content, 'assistant', lastNodeId, reasoning)
-      
-      const { newFlatMessages, newActivePath } = addMessageToTree(
-        conversationTree.flatMessages,
-        conversationTree.activePath,
-        newMessage
-      )
-      
-      setConversationTree({
-        flatMessages: newFlatMessages,
-        rootNodes: buildTreeFromFlat(newFlatMessages),
-        activePath: newActivePath
-      })
-    }
-    
-    clearStreamState()
-  }
-
-  // 发送消息
-  const sendMessage = async (content: string, parentNodeId: string | null = null) => {
-    if (!content.trim() || isLoading) return
-
-    // 确定父节点ID
-    const actualParentId = parentNodeId || (
-      conversationTree.activePath.length > 0 
-        ? conversationTree.activePath[conversationTree.activePath.length - 1]
-        : null
-    )
-
-    // 创建用户消息
-    const userMessage = createFlatMessage(content.trim(), 'user', actualParentId)
-    
-    // 添加用户消息到树中
-    const { newFlatMessages: flatWithUser, newActivePath: pathWithUser } = addMessageToTree(
-      conversationTree.flatMessages,
-      conversationTree.activePath,
-      userMessage
-    )
-
-    // 更新对话树
-    setConversationTree({
-      flatMessages: flatWithUser,
-      rootNodes: buildTreeFromFlat(flatWithUser),
-      activePath: pathWithUser
-    })
-
-    setIsLoading(true)
-    clearStreamState()
-
-    abortControllerRef.current = new AbortController()
-
-    try {
-      // 获取对话历史
-      const conversationHistory = getConversationHistory(userMessage.id, flatWithUser)
-      
-      const result = await callDeepSeekAPI(
-        conversationHistory,
-        currentMode,
-        config,
-        abortControllerRef.current.signal,
-        setCurrentThinking,
-        setCurrentAnswer
-      )
-
-      // 创建AI回复消息
-      const aiMessage = createFlatMessage(result.content, 'assistant', userMessage.id, result.reasoning_content)
-      
-      // 添加AI消息到树中
-      const { newFlatMessages: finalFlatMessages, newActivePath: finalActivePath } = addMessageToTree(
-        flatWithUser,
-        pathWithUser,
-        aiMessage
-      )
-
-      setConversationTree({
-        flatMessages: finalFlatMessages,
-        rootNodes: buildTreeFromFlat(finalFlatMessages),
-        activePath: finalActivePath
-      })
-
-      clearStreamState()
-
-    } catch (error: any) {
-      if (error.name === 'AbortError') return
-      
-      console.error('发送消息失败:', error)
-      const errorMessage = createFlatMessage(
-        `抱歉，发送消息时出现了错误，请稍后重试。错误信息：${error.message || '未知错误'}`,
-        'assistant',
-        userMessage.id
-      )
-      
-      const { newFlatMessages: errorFlatMessages, newActivePath: errorActivePath } = addMessageToTree(
-        flatWithUser,
-        pathWithUser,
-        errorMessage
-      )
-
-      setConversationTree({
-        flatMessages: errorFlatMessages,
-        rootNodes: buildTreeFromFlat(errorFlatMessages),
-        activePath: errorActivePath
-      })
-      
-      clearStreamState()
-    } finally {
-      setIsLoading(false)
-      abortControllerRef.current = null
-    }
-  }
+  }, [conversationState.conversationTree.activePath])
 
   // 处理发送
   const handleSendMessage = () => {
-    if (!inputValue.trim()) return
+    if (!conversationState.inputValue.trim()) return
     
-    const content = inputValue
-    setInputValue('')
-    sendMessage(content)
+    const content = conversationState.inputValue
+    conversationActions.updateInputValue('')
+    conversationActions.sendMessage(content)
   }
-
-  // 重新生成消息（支持任意层级）
-  const handleRegenerate = async (nodeId: string) => {
-    if (isLoading) return
-
-    const regenerateContext = getRegenerateContext(nodeId, conversationTree.flatMessages)
-    if (!regenerateContext) return
-
-    const targetMessage = conversationTree.flatMessages.get(nodeId)
-    if (!targetMessage) return
-
-    // 🎯 UX优化：立即创建新节点并切换，提供即时反馈
-    let newMessage: FlatMessage
-    let newActivePath: string[]
-
-    if (targetMessage.role === 'assistant') {
-      // AI消息：创建新的AI回复节点，父节点与原消息相同
-      newMessage = createFlatMessage('正在生成...', 'assistant', targetMessage.parentId)
-      
-      // 立即切换到新节点
-      const targetNodeIndex = conversationTree.activePath.indexOf(nodeId)
-      newActivePath = targetNodeIndex > 0 
-        ? [...conversationTree.activePath.slice(0, targetNodeIndex), newMessage.id]
-        : [newMessage.id]
-    } else {
-      // 用户消息：创建新的AI回复节点，父节点为用户消息
-      newMessage = createFlatMessage('正在生成...', 'assistant', nodeId)
-      
-      // 立即切换到新节点
-      const targetNodeIndex = conversationTree.activePath.indexOf(nodeId)
-      newActivePath = targetNodeIndex >= 0 
-        ? [...conversationTree.activePath.slice(0, targetNodeIndex + 1), newMessage.id]
-        : [...conversationTree.activePath, newMessage.id]
-    }
-
-    // 立即更新UI，显示新节点和加载状态
-    const { newFlatMessages } = addMessageToTree(
-      conversationTree.flatMessages,
-      [],
-      newMessage
-    )
-
-    setConversationTree({
-      flatMessages: newFlatMessages,
-      rootNodes: buildTreeFromFlat(newFlatMessages),
-      activePath: newActivePath
-    })
-
-    setIsLoading(true)
-    clearStreamState()
-
-    // 开始生成过程
-    abortControllerRef.current = new AbortController()
-
-    try {
-      let conversationHistory: FlatMessage[]
-      
-      if (targetMessage.role === 'assistant') {
-        // AI消息重新生成
-        conversationHistory = regenerateContext.conversationHistory
-      } else {
-        // 用户消息重新生成
-        conversationHistory = [...regenerateContext.conversationHistory, targetMessage]
-      }
-
-      const result = await callDeepSeekAPI(
-        conversationHistory,
-        currentMode,
-        config,
-        abortControllerRef.current.signal,
-        setCurrentThinking,
-        setCurrentAnswer
-      )
-
-      // 生成完成，更新节点内容
-      const updatedMessage: FlatMessage = {
-        ...newMessage,
-        content: result.content,
-        reasoning_content: result.reasoning_content
-      }
-
-      const updatedFlatMessages = new Map(newFlatMessages)
-      updatedFlatMessages.set(newMessage.id, updatedMessage)
-
-      setConversationTree({
-        flatMessages: updatedFlatMessages,
-        rootNodes: buildTreeFromFlat(updatedFlatMessages),
-        activePath: newActivePath
-      })
-
-      clearStreamState()
-
-    } catch (error: any) {
-      if (error.name === 'AbortError') return
-      
-      console.error('重新生成失败:', error)
-      
-      // 生成失败，更新节点为错误信息
-      const errorMessage: FlatMessage = {
-        ...newMessage,
-        content: `抱歉，重新生成时出现了错误，请稍后重试。错误信息：${error.message || '未知错误'}`
-      }
-
-      const errorFlatMessages = new Map(newFlatMessages)
-      errorFlatMessages.set(newMessage.id, errorMessage)
-
-      setConversationTree({
-        flatMessages: errorFlatMessages,
-        rootNodes: buildTreeFromFlat(errorFlatMessages),
-        activePath: newActivePath
-      })
-      
-      clearStreamState()
-    } finally {
-      setIsLoading(false)
-      abortControllerRef.current = null
-    }
-  }
-
-  // 处理分支导航
-  const handleBranchNavigate = (nodeId: string, direction: 'left' | 'right') => {
-    const newActivePath = navigateBranch(nodeId, direction, conversationTree.activePath, conversationTree.rootNodes)
-    if (newActivePath) {
-      setConversationTree(prev => ({
-        ...prev,
-        activePath: newActivePath
-      }))
-    }
-  }
-
-  // 获取当前要渲染的消息节点（已优化：避免重复构建节点映射）
-  const activeNodes = getActiveNodesFromPath(conversationTree.activePath, conversationTree.rootNodes)
 
   return (
     <div className="min-h-screen bg-white flex">
@@ -377,25 +103,23 @@ export default function ChatPage({ onBack }: ChatPageProps) {
         <main className="flex-1 overflow-y-auto">
           <div className="space-y-0">
             {activeNodes.map((node) => {
-              // 已优化：getBranchNavigation内部使用节点映射提高性能
-              const branchNavigation = getBranchNavigation(node.id, conversationTree.activePath, conversationTree.rootNodes)
-              const isInActivePath = conversationTree.activePath.includes(node.id)
-              
-              // 检查是否是当前正在生成的节点
-              const isGeneratingNode = isLoading && node.content === '正在生成...'
+              const branchNavigation = branchManager.getBranchNavigationForNode(node.id)
+              const isInActivePath = conversationState.conversationTree.activePath.includes(node.id)
+              const isGeneratingNode = conversationState.isLoading && node.content === '正在生成...'
               
               return (
                 <MessageBubble 
                   key={node.id} 
                   node={node}
-                  onRegenerate={!isLoading ? handleRegenerate : undefined}
+                  onRegenerate={!conversationState.isLoading ? regenerateMessage : undefined}
+                  onEditUserMessage={!conversationState.isLoading ? conversationActions.editUserMessage : undefined}
                   branchNavigation={branchNavigation}
-                  onBranchNavigate={(direction) => handleBranchNavigate(node.id, direction)}
+                  onBranchNavigate={(direction) => branchManager.navigateToSibling(node.id, direction)}
                   isInActivePath={isInActivePath}
-                  showBranchControls={!isLoading && branchNavigation.totalBranches > 1}
+                  showBranchControls={!conversationState.isLoading && branchNavigation.totalBranches > 1}
                   isGenerating={isGeneratingNode}
-                  currentThinking={isGeneratingNode ? currentThinking : ''}
-                  currentAnswer={isGeneratingNode ? currentAnswer : ''}
+                  currentThinking={isGeneratingNode ? conversationState.currentThinking : ''}
+                  currentAnswer={isGeneratingNode ? conversationState.currentAnswer : ''}
                   showThinking={config.showThinking}
                 />
               )
@@ -407,11 +131,11 @@ export default function ChatPage({ onBack }: ChatPageProps) {
 
         {/* 输入区域 */}
         <ChatInputArea
-          value={inputValue}
-          onChange={setInputValue}
+          value={conversationState.inputValue}
+          onChange={conversationActions.updateInputValue}
           onSend={handleSendMessage}
-          isLoading={isLoading}
-          onAbort={abortRequest}
+          isLoading={conversationState.isLoading}
+          onAbort={conversationActions.abortRequest}
           currentMode={currentMode}
           onModeChange={setCurrentMode}
         />

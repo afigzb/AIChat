@@ -1,0 +1,314 @@
+import { useState, useRef, useCallback } from 'react'
+import type { 
+  FlatMessage, 
+  ConversationTree, 
+  AIConfig, 
+  ChatMode 
+} from './types'
+import { callDeepSeekAPI } from './api'
+import {
+  createInitialConversationTree,
+  createFlatMessage,
+  buildTreeFromFlat,
+  getActiveNodesFromPath,
+  addMessageToTree,
+  getConversationHistory,
+  editUserMessage
+} from './tree-utils'
+
+// 对话管理器的状态
+export interface ConversationState {
+  conversationTree: ConversationTree
+  inputValue: string
+  isLoading: boolean
+  currentThinking: string
+  currentAnswer: string
+}
+
+// 对话管理器的操作
+export interface ConversationActions {
+  sendMessage: (content: string, parentNodeId?: string | null) => Promise<void>
+  editUserMessage: (nodeId: string, newContent: string) => Promise<void>
+  updateInputValue: (value: string) => void
+  abortRequest: () => void
+  clearStreamState: () => void
+  updateConversationTree: (flatMessages: Map<string, FlatMessage>, activePath: string[]) => void
+  updateActivePath: (newPath: string[]) => void
+}
+
+// 通用AI生成函数
+async function generateAIMessage(
+  conversationHistory: FlatMessage[],
+  placeholderMessage: FlatMessage,
+  config: AIConfig,
+  currentMode: ChatMode,
+  abortController: AbortController,
+  onThinkingUpdate: (thinking: string) => void,
+  onAnswerUpdate: (answer: string) => void
+): Promise<FlatMessage> {
+  try {
+    const result = await callDeepSeekAPI(
+      conversationHistory,
+      currentMode,
+      config,
+      abortController.signal,
+      onThinkingUpdate,
+      onAnswerUpdate
+    )
+
+    return {
+      ...placeholderMessage,
+      content: result.content,
+      reasoning_content: result.reasoning_content
+    }
+  } catch (error: any) {
+    if (error.name === 'AbortError') {
+      return {
+        ...placeholderMessage,
+        content: '生成被中断',
+        reasoning_content: undefined
+      }
+    }
+    
+    return {
+      ...placeholderMessage,
+      content: `生成失败: ${error.message || '未知错误'}`
+    }
+  }
+}
+
+// 对话管理器钩子
+export function useConversationManager(
+  config: AIConfig,
+  currentMode: ChatMode,
+  initialWelcomeMessage?: string
+) {
+  // 核心状态：对话树
+  const [conversationTree, setConversationTree] = useState<ConversationTree>(() =>
+    createInitialConversationTree(initialWelcomeMessage || '你好！这里是个人ai聊天工具，调用deepseekapi接口，纯前端设计，无保存对话功能')
+  )
+
+  // UI状态
+  const [inputValue, setInputValue] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [currentThinking, setCurrentThinking] = useState('')
+  const [currentAnswer, setCurrentAnswer] = useState('')
+  
+  // Refs
+  const abortControllerRef = useRef<AbortController | null>(null)
+
+  // 清理流式状态
+  const clearStreamState = useCallback(() => {
+    setCurrentThinking('')
+    setCurrentAnswer('')
+  }, [])
+
+  // 更新对话树的通用方法
+  const updateConversationTree = useCallback((flatMessages: Map<string, FlatMessage>, activePath: string[]) => {
+    setConversationTree({
+      flatMessages,
+      rootNodes: buildTreeFromFlat(flatMessages),
+      activePath
+    })
+  }, [])
+
+  // 更新激活路径
+  const updateActivePath = useCallback((newPath: string[]) => {
+    setConversationTree(prev => ({
+      ...prev,
+      activePath: newPath
+    }))
+  }, [])
+
+  // 生成AI回复的核心逻辑
+  const generateAIReply = useCallback(async (
+    userMessage: FlatMessage,
+    currentFlatMessages?: Map<string, FlatMessage>,
+    currentActivePath?: string[]
+  ) => {
+    const flatMessages = currentFlatMessages || conversationTree.flatMessages
+    const activePath = currentActivePath || conversationTree.activePath
+    
+    // 创建占位AI消息
+    const placeholderMessage = createFlatMessage('正在生成...', 'assistant', userMessage.id)
+    const { newFlatMessages, newActivePath } = addMessageToTree(flatMessages, activePath, placeholderMessage)
+
+    updateConversationTree(newFlatMessages, newActivePath)
+    setIsLoading(true)
+    clearStreamState()
+
+    abortControllerRef.current = new AbortController()
+
+    try {
+      const conversationHistory = getConversationHistory(userMessage.id, newFlatMessages)
+      
+      const finalMessage = await generateAIMessage(
+        conversationHistory,
+        placeholderMessage,
+        config,
+        currentMode,
+        abortControllerRef.current,
+        setCurrentThinking,
+        setCurrentAnswer
+      )
+
+      // 更新最终消息
+      const finalFlatMessages = new Map(newFlatMessages)
+      finalFlatMessages.set(placeholderMessage.id, finalMessage)
+      updateConversationTree(finalFlatMessages, newActivePath)
+      
+    } finally {
+      setIsLoading(false)
+      clearStreamState()
+      abortControllerRef.current = null
+    }
+  }, [conversationTree, config, currentMode, updateConversationTree, clearStreamState])
+
+  // 中断请求
+  const abortRequest = useCallback(() => {
+    if (!abortControllerRef.current) return
+    
+    abortControllerRef.current.abort()
+    setIsLoading(false)
+  }, [])
+
+  // 发送消息
+  const sendMessage = useCallback(async (content: string, parentNodeId: string | null = null) => {
+    if (isLoading || !content.trim()) return
+
+    const actualParentId = parentNodeId || (
+      conversationTree.activePath.length > 0 
+        ? conversationTree.activePath[conversationTree.activePath.length - 1]
+        : null
+    )
+
+    const userMessage = createFlatMessage(content.trim(), 'user', actualParentId)
+    const { newFlatMessages, newActivePath } = addMessageToTree(
+      conversationTree.flatMessages,
+      conversationTree.activePath,
+      userMessage
+    )
+
+    updateConversationTree(newFlatMessages, newActivePath)
+    await generateAIReply(userMessage, newFlatMessages, newActivePath)
+  }, [conversationTree, isLoading, generateAIReply, updateConversationTree])
+
+  // 编辑用户消息
+  const handleEditUserMessage = useCallback(async (nodeId: string, newContent: string) => {
+    if (isLoading) return
+
+    const result = editUserMessage(
+      conversationTree.flatMessages,
+      conversationTree.activePath,
+      nodeId,
+      newContent
+    )
+
+    if (result) {
+      updateConversationTree(result.newFlatMessages, result.newActivePath)
+      
+      const editedMessageId = result.newActivePath[result.newActivePath.length - 1]
+      const editedMessage = result.newFlatMessages.get(editedMessageId)
+      
+      if (editedMessage) {
+        await generateAIReply(editedMessage, result.newFlatMessages, result.newActivePath)
+      }
+    }
+  }, [conversationTree, isLoading, updateConversationTree, generateAIReply])
+
+  // 重新生成消息（合并regeneration功能）
+  const regenerateMessage = useCallback(async (nodeId: string) => {
+    if (isLoading) return
+
+    const targetMessage = conversationTree.flatMessages.get(nodeId)
+    if (!targetMessage) return
+
+    let newMessage: FlatMessage
+    let newActivePath: string[]
+
+    if (targetMessage.role === 'assistant') {
+      // AI消息重新生成
+      newMessage = createFlatMessage('正在生成...', 'assistant', targetMessage.parentId)
+      const targetIndex = conversationTree.activePath.indexOf(nodeId)
+      newActivePath = targetIndex > 0 
+        ? [...conversationTree.activePath.slice(0, targetIndex), newMessage.id]
+        : [newMessage.id]
+    } else {
+      // 用户消息重新生成
+      newMessage = createFlatMessage('正在生成...', 'assistant', nodeId)
+      const targetIndex = conversationTree.activePath.indexOf(nodeId)
+      newActivePath = targetIndex >= 0 
+        ? [...conversationTree.activePath.slice(0, targetIndex + 1), newMessage.id]
+        : [...conversationTree.activePath, newMessage.id]
+    }
+
+    const { newFlatMessages } = addMessageToTree(conversationTree.flatMessages, [], newMessage)
+    updateConversationTree(newFlatMessages, newActivePath)
+
+    setIsLoading(true)
+    clearStreamState()
+    abortControllerRef.current = new AbortController()
+
+    try {
+      let conversationHistory: FlatMessage[]
+      if (targetMessage.role === 'assistant') {
+        conversationHistory = getConversationHistory(targetMessage.parentId || '', newFlatMessages)
+      } else {
+        conversationHistory = [...getConversationHistory(nodeId, newFlatMessages), targetMessage]
+      }
+
+      const finalMessage = await generateAIMessage(
+        conversationHistory,
+        newMessage,
+        config,
+        currentMode,
+        abortControllerRef.current,
+        setCurrentThinking,
+        setCurrentAnswer
+      )
+
+      const updatedFlatMessages = new Map(newFlatMessages)
+      updatedFlatMessages.set(newMessage.id, finalMessage)
+      updateConversationTree(updatedFlatMessages, newActivePath)
+
+    } finally {
+      setIsLoading(false)
+      clearStreamState()
+      abortControllerRef.current = null
+    }
+  }, [conversationTree, isLoading, config, currentMode, updateConversationTree, clearStreamState])
+
+  // 获取当前要渲染的消息节点
+  const activeNodes = getActiveNodesFromPath(conversationTree.activePath, conversationTree.rootNodes)
+
+  // 状态对象
+  const state: ConversationState = {
+    conversationTree,
+    inputValue,
+    isLoading,
+    currentThinking,
+    currentAnswer
+  }
+
+  // 操作对象
+  const actions: ConversationActions = {
+    sendMessage,
+    editUserMessage: handleEditUserMessage,
+    updateInputValue: setInputValue,
+    abortRequest,
+    clearStreamState,
+    updateConversationTree,
+    updateActivePath
+  }
+
+  return {
+    state,
+    actions,
+    activeNodes,
+    regenerateMessage,
+    abortControllerRef,
+    setIsLoading,
+    setCurrentThinking,
+    setCurrentAnswer
+  }
+} 

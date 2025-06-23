@@ -66,24 +66,16 @@ export interface DeepSeekStreamResponse {
 
 // ===== 配置相关 =====
 
-// 模型配置基础接口
-interface ModelConfig {
-  maxTokens: number
-}
-
-// V3模型配置（继承基础配置，添加温度参数）
-interface V3Config extends ModelConfig {
-  temperature: number
-}
-
-// R1模型配置（仅需基础配置）
-interface R1Config extends ModelConfig {}
-
-// AI完整配置
+// 合并配置类型，减少重复定义
 export interface AIConfig {
-  v3Config: V3Config      // V3模型参数
-  r1Config: R1Config      // R1模型参数  
-  showThinking: boolean   // 是否显示思考过程
+  v3Config: {
+    temperature: number
+    maxTokens: number
+  }
+  r1Config: {
+    maxTokens: number
+  }
+  showThinking: boolean
 }
 
 // ===== 组件Props =====
@@ -93,14 +85,20 @@ export interface ChatPageProps {
   onBack: () => void
 }
 
-// 消息气泡属性（更新后）
+// 消息气泡属性（优化后）
 export interface MessageBubbleProps {
   node: MessageNode
   onRegenerate?: (nodeId: string) => void
+  onEditUserMessage?: (nodeId: string, newContent: string) => void
   branchNavigation?: BranchNavigation
   onBranchNavigate?: (direction: 'left' | 'right') => void
   isInActivePath: boolean
   showBranchControls: boolean
+  // 实时生成状态
+  isGenerating?: boolean
+  currentThinking?: string
+  currentAnswer?: string
+  showThinking?: boolean
 }
 
 // ===== 工具函数类型 =====
