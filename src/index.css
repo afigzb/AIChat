@@ -2,6 +2,13 @@
 
 /* 自定义样式可以添加在这里 */
 
+/* 修复长文本换行问题 */
+* {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
 /* 美化滚动条 */
 ::-webkit-scrollbar {
   width: 6px;

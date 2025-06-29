@@ -9,35 +9,36 @@ import { MessageBubble, AISettings, ChatInputArea } from './components'
 import { useConversationManager } from '../managers/conversation-manager'
 import { useBranchManager } from '../managers/branch-manager'
 
-// 设置按钮组件
-function SettingsButton({ isOpen, onClick }: { isOpen: boolean; onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`fixed left-4 top-4 z-50 p-3 rounded-full shadow-lg transition-all duration-200 ${
-        isOpen 
-          ? 'bg-blue-600 text-white scale-110' 
-          : 'bg-white text-gray-600 hover:text-blue-600 hover:bg-blue-50 border border-gray-200 hover:border-blue-200 hover:shadow-xl'
-      }`}
-    >
-      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-        <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd"/>
-      </svg>
-    </button>
-  )
-}
-
 // 页面头部组件
-function Header({ onBack }: { onBack: () => void }) {
+function Header({ onBack, onSettingsClick, showSettings }: { 
+  onBack: () => void
+  onSettingsClick: () => void
+  showSettings: boolean
+}) {
   return (
-    <header className="bg-white border-b border-gray-200 px-6 py-4 sticky top-0 z-40">
-      <div className="max-w-4xl mx-auto">
-        <button
-          onClick={onBack}
-          className="font-semibold text-gray-900 hover:text-gray-600 transition-colors"
-        >
-          DeepSeek Assistant
-        </button>
+    <header className="bg-white border-b relative border-gray-200 px-6 py-4 top-0 z-40">
+      <button
+        onClick={onSettingsClick}
+        className={`p-2 rounded-lg absolute left-4 top-1/2 -translate-y-1/2 transition-all duration-200 ${
+          showSettings 
+            ? 'bg-blue-600 text-white' 
+            : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
+        }`}
+        title="设置"
+      >
+        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd"/>
+        </svg>
+      </button>
+      <div className="max-w-4xl mx-auto flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onBack}
+            className="font-semibold text-gray-900 hover:text-gray-600 transition-colors"
+          >
+            DeepSeek Assistant
+          </button>
+        </div>
       </div>
     </header>
   )
@@ -81,23 +82,18 @@ export default function ChatPage({ onBack }: ChatPageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-white flex">
-      {/* 侧边栏 */}
-      <div className="relative">
-        <SettingsButton isOpen={showSettings} onClick={() => setShowSettings(!showSettings)} />
-        <AISettings
-          config={config}
-          onConfigChange={setConfig}
-          onClose={() => setShowSettings(false)}
-          isOpen={showSettings}
-        />
-      </div>
+    <div className="min-h-screen bg-white">
+      {/* 设置侧边栏 - 绝对定位 */}
+      <AISettings
+        config={config}
+        onConfigChange={setConfig}
+        onClose={() => setShowSettings(false)}
+        isOpen={showSettings}
+      />
 
       {/* 主内容区 */}
-      <div className={`flex-1 flex flex-col transition-all duration-300 ${
-        showSettings ? 'ml-80' : 'ml-0'
-      }`}>
-        <Header onBack={onBack} />
+      <div className="flex flex-col min-h-screen">
+        <Header onBack={onBack} onSettingsClick={() => setShowSettings(!showSettings)} showSettings={showSettings} />
 
         {/* 聊天区域 */}
         <main className="flex-1 overflow-y-auto">

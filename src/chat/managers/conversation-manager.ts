@@ -49,14 +49,23 @@ async function generateAIMessage(
   onThinkingUpdate: (thinking: string) => void,
   onAnswerUpdate: (answer: string) => void
 ): Promise<FlatMessage> {
+  let currentGeneratedContent = ''
+  let currentReasoningContent = ''
+  
   try {
     const result = await callDeepSeekAPI(
       conversationHistory,
       currentMode,
       config,
       abortController.signal,
-      onThinkingUpdate,
-      onAnswerUpdate
+      (thinking) => {
+        currentReasoningContent = thinking
+        onThinkingUpdate(thinking)
+      },
+      (answer) => {
+        currentGeneratedContent = answer
+        onAnswerUpdate(answer)
+      }
     )
 
     return {
@@ -65,12 +74,16 @@ async function generateAIMessage(
       reasoning_content: result.reasoning_content
     }
   } catch (error: any) {
-    // 处理中断错误
+    // 处理中断错误 - 保留已生成的内容
     if (error.name === 'AbortError') {
+      // 如果有已生成的内容，保留它；否则显示中断提示
+      const finalContent = currentGeneratedContent.trim() || '生成被中断'
+      const finalReasoning = currentReasoningContent.trim() || undefined
+      
       return {
         ...placeholderMessage,
-        content: '生成被中断',
-        reasoning_content: undefined
+        content: finalContent,
+        reasoning_content: finalReasoning
       }
     }
     
@@ -184,8 +197,8 @@ export function useConversationManager(
   const abortRequest = useCallback(() => {
     if (!abortControllerRef.current) return
     
+    // 中断API请求，让generateAIMessage的catch块处理内容保存
     abortControllerRef.current.abort()
-    setIsLoading(false)
   }, [])
 
   /**
