@@ -1,21 +1,25 @@
 import type { FlatMessage, DeepSeekStreamResponse, AIConfig, ChatMode } from './types'
 
+// DeepSeek API 配置
 const API_KEY = 'sk-69570c7641cc45c7b8c3d7058f9d1743'
 const API_BASE_URL = 'https://api.deepseek.com/v1/chat/completions'
 
-// 默认配置
+// 默认AI配置参数
 export const DEFAULT_CONFIG: AIConfig = {
   v3Config: {
-    temperature: 1.0,
-    maxTokens: 8192
+    temperature: 1.0,    // 创造性参数，越高越创新
+    maxTokens: 8192      // 最大输出长度
   },
   r1Config: {
-    maxTokens: 8192  
+    maxTokens: 8192      // R1模式最大输出长度
   },
-  showThinking: true
+  showThinking: true     // 是否显示思考过程
 }
 
-// 构建请求消息
+/**
+ * 构建API请求消息列表
+ * 过滤掉系统不需要的消息类型，添加系统提示
+ */
 function buildMessages(messages: FlatMessage[]): Array<{ role: string; content: string }> {
   const currentDate = new Date().toLocaleDateString('zh-CN', {
     month: 'long',
@@ -34,7 +38,10 @@ function buildMessages(messages: FlatMessage[]): Array<{ role: string; content: 
   ]
 }
 
-// 构建请求体
+/**
+ * 构建完整的API请求体
+ * 根据不同模式设置不同参数
+ */
 function buildRequestBody(
   messages: FlatMessage[], 
   currentMode: ChatMode, 
@@ -47,10 +54,10 @@ function buildRequestBody(
     model,
     messages: buildMessages(messages),
     max_tokens: modelConfig.maxTokens,
-    stream: true
+    stream: true    // 启用流式响应
   }
 
-  // V3模式添加temperature参数
+  // V3模式添加temperature参数，R1模式不支持
   if (currentMode === 'v3') {
     return { ...requestBody, temperature: config.v3Config.temperature }
   }
@@ -58,7 +65,10 @@ function buildRequestBody(
   return requestBody
 }
 
-// 处理流式响应数据
+/**
+ * 解析流式响应数据块
+ * 处理 Server-Sent Events 格式的数据
+ */
 function parseStreamChunk(chunk: string): Array<{ reasoning_content?: string; content?: string }> {
   return chunk.split('\n')
     .filter(line => line.startsWith('data: '))
@@ -75,7 +85,17 @@ function parseStreamChunk(chunk: string): Array<{ reasoning_content?: string; co
     .filter(delta => delta.reasoning_content || delta.content)
 }
 
-// 调用DeepSeek API
+/**
+ * 调用DeepSeek API的主函数
+ * 支持流式响应和中断控制
+ * @param messages 对话历史
+ * @param currentMode 当前聊天模式  
+ * @param config AI配置
+ * @param abortSignal 中断信号
+ * @param onThinkingUpdate 思考过程更新回调
+ * @param onAnswerUpdate 答案更新回调
+ * @returns 完整的AI响应
+ */
 export async function callDeepSeekAPI(
   messages: FlatMessage[],
   currentMode: ChatMode,
@@ -102,10 +122,11 @@ export async function callDeepSeekAPI(
   const reader = response.body?.getReader()
   if (!reader) throw new Error('无法获取响应流')
 
-  let reasoning_content = ''
-  let content = ''
+  let reasoning_content = ''  // R1模式的思考过程
+  let content = ''           // 最终回答内容
 
   try {
+    // 持续读取流式数据
     while (true) {
       const { done, value } = await reader.read()
       if (done) break
@@ -114,11 +135,11 @@ export async function callDeepSeekAPI(
       for (const delta of deltas) {
         if (delta.reasoning_content) {
           reasoning_content += delta.reasoning_content
-          onThinkingUpdate(reasoning_content)
+          onThinkingUpdate(reasoning_content)  // 实时更新思考过程
         }
         if (delta.content) {
           content += delta.content
-          onAnswerUpdate(content)
+          onAnswerUpdate(content)  // 实时更新回答内容
         }
       }
     }

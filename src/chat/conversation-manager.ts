@@ -16,7 +16,7 @@ import {
   editUserMessage
 } from './tree-utils'
 
-// 对话管理器的状态
+// 对话管理器的状态接口
 export interface ConversationState {
   conversationTree: ConversationTree
   inputValue: string
@@ -25,7 +25,7 @@ export interface ConversationState {
   currentAnswer: string
 }
 
-// 对话管理器的操作
+// 对话管理器的操作接口
 export interface ConversationActions {
   sendMessage: (content: string, parentNodeId?: string | null) => Promise<void>
   editUserMessage: (nodeId: string, newContent: string) => Promise<void>
@@ -36,7 +36,10 @@ export interface ConversationActions {
   updateActivePath: (newPath: string[]) => void
 }
 
-// 通用AI生成函数
+/**
+ * 通用AI消息生成函数
+ * 处理API调用、错误处理和流式更新
+ */
 async function generateAIMessage(
   conversationHistory: FlatMessage[],
   placeholderMessage: FlatMessage,
@@ -62,6 +65,7 @@ async function generateAIMessage(
       reasoning_content: result.reasoning_content
     }
   } catch (error: any) {
+    // 处理中断错误
     if (error.name === 'AbortError') {
       return {
         ...placeholderMessage,
@@ -70,6 +74,7 @@ async function generateAIMessage(
       }
     }
     
+    // 处理其他错误
     return {
       ...placeholderMessage,
       content: `生成失败: ${error.message || '未知错误'}`
@@ -77,7 +82,13 @@ async function generateAIMessage(
   }
 }
 
-// 对话管理器钩子
+/**
+ * 对话管理器主Hook
+ * 管理整个对话的状态和逻辑
+ * @param config AI配置
+ * @param currentMode 当前聊天模式
+ * @param initialWelcomeMessage 初始欢迎消息
+ */
 export function useConversationManager(
   config: AIConfig,
   currentMode: ChatMode,
@@ -88,13 +99,13 @@ export function useConversationManager(
     createInitialConversationTree(initialWelcomeMessage || '你好！这里是个人ai聊天工具，调用deepseekapi接口，纯前端设计，无保存对话功能')
   )
 
-  // UI状态
+  // UI交互状态
   const [inputValue, setInputValue] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [currentThinking, setCurrentThinking] = useState('')
-  const [currentAnswer, setCurrentAnswer] = useState('')
+  const [currentThinking, setCurrentThinking] = useState('')    // 实时思考过程
+  const [currentAnswer, setCurrentAnswer] = useState('')       // 实时回答内容
   
-  // Refs
+  // 请求控制
   const abortControllerRef = useRef<AbortController | null>(null)
 
   // 清理流式状态
@@ -120,7 +131,10 @@ export function useConversationManager(
     }))
   }, [])
 
-  // 生成AI回复的核心逻辑
+  /**
+   * 生成AI回复的核心逻辑
+   * 创建占位消息、调用API、更新最终结果
+   */
   const generateAIReply = useCallback(async (
     userMessage: FlatMessage,
     currentFlatMessages?: Map<string, FlatMessage>,
@@ -140,8 +154,10 @@ export function useConversationManager(
     abortControllerRef.current = new AbortController()
 
     try {
+      // 获取到当前用户消息为止的对话历史
       const conversationHistory = getConversationHistory(userMessage.id, newFlatMessages)
       
+      // 调用AI API生成回复
       const finalMessage = await generateAIMessage(
         conversationHistory,
         placeholderMessage,
@@ -164,7 +180,7 @@ export function useConversationManager(
     }
   }, [conversationTree, config, currentMode, updateConversationTree, clearStreamState])
 
-  // 中断请求
+  // 中断当前请求
   const abortRequest = useCallback(() => {
     if (!abortControllerRef.current) return
     
@@ -172,16 +188,22 @@ export function useConversationManager(
     setIsLoading(false)
   }, [])
 
-  // 发送消息
+  /**
+   * 发送新消息
+   * @param content 消息内容
+   * @param parentNodeId 父节点ID，为空时添加到当前路径末尾
+   */
   const sendMessage = useCallback(async (content: string, parentNodeId: string | null = null) => {
     if (isLoading || !content.trim()) return
 
+    // 确定父节点ID
     const actualParentId = parentNodeId || (
       conversationTree.activePath.length > 0 
         ? conversationTree.activePath[conversationTree.activePath.length - 1]
         : null
     )
 
+    // 创建用户消息并添加到树中
     const userMessage = createFlatMessage(content.trim(), 'user', actualParentId)
     const { newFlatMessages, newActivePath } = addMessageToTree(
       conversationTree.flatMessages,
@@ -193,7 +215,11 @@ export function useConversationManager(
     await generateAIReply(userMessage, newFlatMessages, newActivePath)
   }, [conversationTree, isLoading, generateAIReply, updateConversationTree])
 
-  // 编辑用户消息
+  /**
+   * 编辑用户消息并重新生成AI回复
+   * @param nodeId 要编辑的消息ID
+   * @param newContent 新的消息内容
+   */
   const handleEditUserMessage = useCallback(async (nodeId: string, newContent: string) => {
     if (isLoading) return
 

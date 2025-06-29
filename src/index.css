@@ -2,43 +2,6 @@
 
 /* 自定义样式可以添加在这里 */
 
-/* 现代化滑块样式 */
-.slider-thumb::-webkit-slider-thumb {
-  appearance: none;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: #c23531;
-  cursor: pointer;
-  border: 2px solid white;
-  box-shadow: 0 2px 8px rgba(194, 53, 49, 0.3);
-  transition: all 0.2s ease;
-}
-
-.slider-thumb::-webkit-slider-thumb:hover {
-  background: #d48265;
-  box-shadow: 0 4px 12px rgba(194, 53, 49, 0.4);
-  transform: scale(1.1);
-}
-
-.slider-thumb::-moz-range-thumb {
-  appearance: none;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: #c23531;
-  cursor: pointer;
-  border: 2px solid white;
-  box-shadow: 0 2px 8px rgba(194, 53, 49, 0.3);
-  transition: all 0.2s ease;
-}
-
-.slider-thumb::-moz-range-thumb:hover {
-  background: #d48265;
-  box-shadow: 0 4px 12px rgba(194, 53, 49, 0.4);
-  transform: scale(1.1);
-}
-
 /* 美化滚动条 */
 ::-webkit-scrollbar {
   width: 6px;
@@ -57,33 +20,7 @@
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #c23531;
-}
-
-/* 聊天输入框专用滚动条样式 */
-.chat-textarea::-webkit-scrollbar {
-  width: 4px;
-}
-
-.chat-textarea::-webkit-scrollbar-track {
-  background: transparent;
-  border-radius: 2px;
-}
-
-.chat-textarea::-webkit-scrollbar-thumb {
-  background: #d1d5db;
-  border-radius: 2px;
-  border: none;
-}
-
-.chat-textarea::-webkit-scrollbar-thumb:hover {
   background: #9ca3af;
-}
-
-/* Firefox 滚动条样式 */
-.chat-textarea {
-  scrollbar-width: thin;
-  scrollbar-color: #d1d5db transparent;
 }
 
 /* 输入框自动高度调整 */
