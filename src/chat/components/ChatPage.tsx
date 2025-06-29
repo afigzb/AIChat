@@ -3,11 +3,11 @@ import type {
   ChatPageProps, 
   AIConfig, 
   ChatMode
-} from './types'
-import { DEFAULT_CONFIG } from './api'
+} from '../data/types'
+import { DEFAULT_CONFIG } from '../api/api'
 import { MessageBubble, AISettings, ChatInputArea } from './components'
-import { useConversationManager } from './conversation-manager'
-import { useBranchManager } from './branch-manager'
+import { useConversationManager } from '../managers/conversation-manager'
+import { useBranchManager } from '../managers/branch-manager'
 
 // 设置按钮组件
 function SettingsButton({ isOpen, onClick }: { isOpen: boolean; onClick: () => void }) {

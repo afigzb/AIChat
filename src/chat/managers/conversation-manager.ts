@@ -4,8 +4,8 @@ import type {
   ConversationTree, 
   AIConfig, 
   ChatMode 
-} from './types'
-import { callDeepSeekAPI } from './api'
+} from '../data/types'
+import { callDeepSeekAPI } from '../api/api'
 import {
   createInitialConversationTree,
   createFlatMessage,
@@ -14,7 +14,7 @@ import {
   addMessageToTree,
   getConversationHistory,
   editUserMessage
-} from './tree-utils'
+} from '../data/tree-utils'
 
 // 对话管理器的状态接口
 export interface ConversationState {

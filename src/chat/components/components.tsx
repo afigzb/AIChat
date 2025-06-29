@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
-import type { MessageNode, AIConfig, ChatMode, MessageBubbleProps, BranchNavigation } from './types'
-import { DEFAULT_CONFIG } from './api'
+import type { MessageNode, AIConfig, ChatMode, MessageBubbleProps, BranchNavigation } from '../data/types'
+import { DEFAULT_CONFIG } from '../api/api'
 
 // ===== 公共组件 =====
 

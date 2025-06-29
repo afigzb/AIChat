@@ -1,4 +1,4 @@
-import type { FlatMessage, DeepSeekStreamResponse, AIConfig, ChatMode } from './types'
+import type { FlatMessage, DeepSeekStreamResponse, AIConfig, ChatMode } from '../data/types'
 
 // DeepSeek API 配置
 const API_KEY = 'sk-69570c7641cc45c7b8c3d7058f9d1743'
