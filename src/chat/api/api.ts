@@ -1,4 +1,5 @@
-import type { FlatMessage, DeepSeekStreamResponse, AIConfig, ChatMode } from '../data/types'
+import type { FlatMessage, DeepSeekStreamResponse, AIConfig, ChatMode, CorpusConfig } from '../data/types'
+import { loadCorpusConfigFromDataJson } from '../data/corpus-utils'
 
 // DeepSeek API 配置
 const API_KEY = 'sk-69570c7641cc45c7b8c3d7058f9d1743'
@@ -13,28 +14,60 @@ export const DEFAULT_CONFIG: AIConfig = {
   r1Config: {
     maxTokens: 8192      // R1模式最大输出长度
   },
-  showThinking: true     // 是否显示思考过程
+  showThinking: true,    // 是否显示思考过程
+  corpus: loadCorpusConfigFromDataJson()  // 从 data.json 加载语料配置
 }
 
 /**
  * 构建API请求消息列表
- * 过滤掉系统不需要的消息类型，添加系统提示
+ * 过滤掉系统不需要的消息类型，添加系统提示和语料
+ * @param messages 原始消息列表
+ * @param config AI配置（包含语料）
+ * @param isFirstConversation 是否是首次对话
  */
-function buildMessages(messages: FlatMessage[]): Array<{ role: string; content: string }> {
+function buildMessages(
+  messages: FlatMessage[], 
+  config: AIConfig, 
+  isFirstConversation: boolean = false
+): Array<{ role: string; content: string }> {
   const currentDate = new Date().toLocaleDateString('zh-CN', {
     month: 'long',
     day: 'numeric',
     weekday: 'long'
   })
   
-  const systemPrompt = `该助手为DeepSeek Chat，由深度求索公司创造。\n今天是${currentDate}。`
+  let systemPrompt = `该助手为DeepSeek Chat，由深度求索公司创造。\n今天是${currentDate}。`
+  
+  // 添加首发语料（仅在首次对话时）
+  if (isFirstConversation && config.corpus.initialCorpus.length > 0) {
+    const enabledInitialCorpus = config.corpus.initialCorpus.filter(item => item.enabled)
+    if (enabledInitialCorpus.length > 0) {
+      const initialCorpusContent = enabledInitialCorpus.map(item => item.content).join('\n\n')
+      systemPrompt += `\n\n【首发语料】\n${initialCorpusContent}`
+    }
+  }
+  
+  // 处理用户消息，添加强调语料
+  const processedMessages = messages
+    .filter(m => m.role === 'user' || m.role === 'assistant')
+    .map(m => {
+      if (m.role === 'user' && config.corpus.emphasisCorpus.length > 0) {
+        // 为用户消息添加强调语料
+        const enabledEmphasisCorpus = config.corpus.emphasisCorpus.filter(item => item.enabled)
+        if (enabledEmphasisCorpus.length > 0) {
+          const emphasisContent = enabledEmphasisCorpus.map(item => item.content).join('\n')
+          return {
+            role: m.role,
+            content: `${m.content}\n\n【重要提醒】\n${emphasisContent}`
+          }
+        }
+      }
+      return { role: m.role, content: m.content }
+    })
   
   return [
     { role: 'system', content: systemPrompt },
-    ...messages
-      .filter(m => m.role === 'user' || m.role === 'assistant')
-      // 注意：根据DeepSeek官方文档，reasoning_content不应包含在下一轮请求中
-      .map(m => ({ role: m.role, content: m.content }))
+    ...processedMessages
   ]
 }
 
@@ -45,14 +78,15 @@ function buildMessages(messages: FlatMessage[]): Array<{ role: string; content: 
 function buildRequestBody(
   messages: FlatMessage[], 
   currentMode: ChatMode, 
-  config: AIConfig
+  config: AIConfig,
+  isFirstConversation: boolean = false
 ): Record<string, any> {
   const model = currentMode === 'r1' ? 'deepseek-reasoner' : 'deepseek-chat'
   const modelConfig = currentMode === 'r1' ? config.r1Config : config.v3Config
   
   const requestBody = {
     model,
-    messages: buildMessages(messages),
+    messages: buildMessages(messages, config, isFirstConversation),
     max_tokens: modelConfig.maxTokens,
     stream: true    // 启用流式响应
   }
@@ -94,6 +128,7 @@ function parseStreamChunk(chunk: string): Array<{ reasoning_content?: string; co
  * @param abortSignal 中断信号
  * @param onThinkingUpdate 思考过程更新回调
  * @param onAnswerUpdate 答案更新回调
+ * @param isFirstConversation 是否是首次对话
  * @returns 完整的AI响应
  */
 export async function callDeepSeekAPI(
@@ -102,7 +137,8 @@ export async function callDeepSeekAPI(
   config: AIConfig,
   abortSignal: AbortSignal,
   onThinkingUpdate: (thinking: string) => void,
-  onAnswerUpdate: (answer: string) => void
+  onAnswerUpdate: (answer: string) => void,
+  isFirstConversation: boolean = false
 ): Promise<{ reasoning_content?: string; content: string }> {
   
   const response = await fetch(API_BASE_URL, {
@@ -111,7 +147,7 @@ export async function callDeepSeekAPI(
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${API_KEY}`
     },
-    body: JSON.stringify(buildRequestBody(messages, currentMode, config)),
+    body: JSON.stringify(buildRequestBody(messages, currentMode, config, isFirstConversation)),
     signal: abortSignal
   })
 

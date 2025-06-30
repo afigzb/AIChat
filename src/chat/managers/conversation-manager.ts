@@ -47,7 +47,8 @@ async function generateAIMessage(
   currentMode: ChatMode,
   abortController: AbortController,
   onThinkingUpdate: (thinking: string) => void,
-  onAnswerUpdate: (answer: string) => void
+  onAnswerUpdate: (answer: string) => void,
+  isFirstConversation: boolean = false
 ): Promise<FlatMessage> {
   let currentGeneratedContent = ''
   let currentReasoningContent = ''
@@ -65,7 +66,8 @@ async function generateAIMessage(
       (answer) => {
         currentGeneratedContent = answer
         onAnswerUpdate(answer)
-      }
+      },
+      isFirstConversation
     )
 
     return {
@@ -117,6 +119,9 @@ export function useConversationManager(
   const [isLoading, setIsLoading] = useState(false)
   const [currentThinking, setCurrentThinking] = useState('')    // 实时思考过程
   const [currentAnswer, setCurrentAnswer] = useState('')       // 实时回答内容
+  
+  // 语料管理状态
+  const [hasHadConversation, setHasHadConversation] = useState(false)  // 是否已有过对话
   
   // 请求控制
   const abortControllerRef = useRef<AbortController | null>(null)
@@ -171,6 +176,7 @@ export function useConversationManager(
       const conversationHistory = getConversationHistory(userMessage.id, newFlatMessages)
       
       // 调用AI API生成回复
+      const isFirstConversation = !hasHadConversation
       const finalMessage = await generateAIMessage(
         conversationHistory,
         placeholderMessage,
@@ -178,8 +184,14 @@ export function useConversationManager(
         currentMode,
         abortControllerRef.current,
         setCurrentThinking,
-        setCurrentAnswer
+        setCurrentAnswer,
+        isFirstConversation
       )
+      
+      // 标记已经有过对话
+      if (isFirstConversation) {
+        setHasHadConversation(true)
+      }
 
       // 更新最终消息
       const finalFlatMessages = new Map(newFlatMessages)
@@ -303,7 +315,8 @@ export function useConversationManager(
         currentMode,
         abortControllerRef.current,
         setCurrentThinking,
-        setCurrentAnswer
+        setCurrentAnswer,
+        false  // 重新生成不是首次对话
       )
 
       const updatedFlatMessages = new Map(newFlatMessages)

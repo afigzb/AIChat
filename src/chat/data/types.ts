@@ -6,6 +6,27 @@ export type MessageRole = 'user' | 'assistant' | 'system'
 // 对话模式
 export type ChatMode = 'v3' | 'r1'
 
+// 语料类型
+export type CorpusType = 'initial' | 'emphasis'
+
+// ===== 语料相关 =====
+
+// 语料项
+export interface CorpusItem {
+  id: string
+  name: string           // 语料名称
+  type: CorpusType      // 语料类型：首发或强调
+  content: string       // 语料内容
+  enabled: boolean      // 是否启用
+  created: Date         // 创建时间
+}
+
+// 语料配置
+export interface CorpusConfig {
+  initialCorpus: CorpusItem[]    // 首发语料列表
+  emphasisCorpus: CorpusItem[]   // 强调语料列表
+}
+
 // ===== 消息相关 =====
 
 // 扁平结构的聊天消息
@@ -76,6 +97,7 @@ export interface AIConfig {
     maxTokens: number
   }
   showThinking: boolean
+  corpus: CorpusConfig     // 语料配置
 }
 
 // ===== 组件Props =====
