@@ -159,20 +159,20 @@ export function CorpusManager({ config, onConfigChange, onClose }: CorpusManager
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+      <div className="bg-white rounded-lg shadow-lg w-[1000px] h-[700px] overflow-hidden">
         {/* 头部 */}
-        <div className="flex justify-between items-center p-6 border-b">
-          <h2 className="text-xl font-semibold">语料管理</h2>
-          <div className="flex gap-2">
+        <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200 bg-gray-50">
+          <h2 className="text-lg font-medium text-gray-900">语料管理</h2>
+          <div className="flex gap-3">
             <button
               onClick={handleExport}
-              className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
+              className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md transition-colors hover:bg-blue-700"
             >
-              导出到剪贴板
+              导出配置
             </button>
             <button
               onClick={onClose}
-              className="px-3 py-1 text-sm bg-gray-500 text-white rounded hover:bg-gray-600"
+              className="px-4 py-2 text-sm bg-gray-600 text-white rounded-md transition-colors hover:bg-gray-700"
             >
               关闭
             </button>
@@ -180,41 +180,34 @@ export function CorpusManager({ config, onConfigChange, onClose }: CorpusManager
         </div>
 
         {/* 使用说明 */}
-        <div className="p-4 bg-amber-50 border-b border-amber-200">
-          <div className="flex items-start gap-2">
-            <svg className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd"/>
-            </svg>
-            <div className="text-sm text-amber-800">
-              <div className="font-medium mb-1">语料配置说明</div>
-              <div>语料配置会从 <code className="bg-amber-100 px-1 rounded">src/chat/data/data.json</code> 文件中加载。</div>
-              <div>在此页面修改语料后，点击"导出到剪贴板"，然后手动粘贴到 data.json 文件的 corpus 字段中。</div>
-              <div className="mt-1 text-amber-700">⚠️ 修改 data.json 文件后，需要刷新页面才能加载新的配置。</div>
-            </div>
+        <div className="px-6 py-3 bg-blue-50 border-b border-blue-100">
+          <div className="text-sm text-blue-800">
+            <div className="font-medium mb-1">配置说明</div>
+            <div>语料配置从 <code className="bg-blue-100 px-1 rounded text-xs">data.json</code> 加载，修改后导出并粘贴到文件中，刷新页面生效</div>
           </div>
         </div>
 
-        <div className="flex h-[calc(90vh-200px)]">
+        <div className="flex h-[580px]">
           {/* 左侧：类型选择和列表 */}
-          <div className="w-1/3 border-r flex flex-col">
+          <div className="w-80 border-r border-gray-200 flex flex-col bg-gray-50">
             {/* 标签页 */}
-            <div className="flex border-b">
+            <div className="flex border-b border-gray-200">
               <button
                 onClick={() => setActiveTab('initial')}
-                className={`flex-1 p-3 text-sm font-medium ${
+                className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
                   activeTab === 'initial'
-                    ? 'bg-blue-50 text-blue-600 border-b-2 border-blue-600'
-                    : 'text-gray-600 hover:text-gray-800'
+                    ? 'bg-white text-blue-600 border-b-2 border-blue-600'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                 }`}
               >
                 首发语料 ({config.initialCorpus.length})
               </button>
               <button
                 onClick={() => setActiveTab('emphasis')}
-                className={`flex-1 p-3 text-sm font-medium ${
+                className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
                   activeTab === 'emphasis'
-                    ? 'bg-blue-50 text-blue-600 border-b-2 border-blue-600'
-                    : 'text-gray-600 hover:text-gray-800'
+                    ? 'bg-white text-blue-600 border-b-2 border-blue-600'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                 }`}
               >
                 强调语料 ({config.emphasisCorpus.length})
@@ -222,31 +215,31 @@ export function CorpusManager({ config, onConfigChange, onClose }: CorpusManager
             </div>
 
             {/* 添加按钮 */}
-            <div className="p-3 border-b">
+            <div className="p-4 border-b border-gray-200">
               <button
                 onClick={() => startEdit()}
-                className="w-full p-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                className="w-full py-2.5 px-4 bg-blue-600 text-white text-sm rounded-md transition-colors hover:bg-blue-700"
               >
-                + 添加{activeTab === 'initial' ? '首发' : '强调'}语料
+                添加{activeTab === 'initial' ? '首发' : '强调'}语料
               </button>
             </div>
 
             {/* 语料列表 */}
             <div className="flex-1 overflow-y-auto">
               {currentCorpus.length === 0 ? (
-                <div className="p-4 text-gray-500 text-center">
+                <div className="p-6 text-center text-gray-500 text-sm">
                   暂无{activeTab === 'initial' ? '首发' : '强调'}语料
                 </div>
               ) : (
                 currentCorpus.map((corpus) => (
                   <div
                     key={corpus.id}
-                    className={`p-3 border-b hover:bg-gray-50 cursor-pointer ${
-                      editingCorpus?.id === corpus.id ? 'bg-blue-50' : ''
+                    className={`p-4 border-b border-gray-100 cursor-pointer transition-colors ${
+                      editingCorpus?.id === corpus.id ? 'bg-blue-50' : 'hover:bg-white'
                     }`}
                     onClick={() => startEdit(corpus)}
                   >
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
                         <input
                           type="checkbox"
@@ -255,9 +248,9 @@ export function CorpusManager({ config, onConfigChange, onClose }: CorpusManager
                             e.stopPropagation()
                             toggleCorpusEnabled(corpus.id)
                           }}
-                          className="rounded"
+                          className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 focus:ring-2"
                         />
-                        <span className={`font-medium ${!corpus.enabled ? 'text-gray-400' : ''}`}>
+                        <span className={`text-sm font-medium ${!corpus.enabled ? 'text-gray-400' : 'text-gray-900'}`}>
                           {corpus.name}
                         </span>
                       </div>
@@ -266,14 +259,14 @@ export function CorpusManager({ config, onConfigChange, onClose }: CorpusManager
                           e.stopPropagation()
                           deleteCorpus(corpus.id)
                         }}
-                        className="text-red-500 hover:text-red-700 text-sm"
+                        className="text-xs text-gray-400 hover:text-red-600 transition-colors"
                       >
                         删除
                       </button>
                     </div>
-                    <div className={`text-sm mt-1 ${!corpus.enabled ? 'text-gray-400' : 'text-gray-600'}`}>
-                      {corpus.content.length > 50 
-                        ? corpus.content.substring(0, 50) + '...' 
+                    <div className={`text-xs ${!corpus.enabled ? 'text-gray-300' : 'text-gray-500'}`}>
+                      {corpus.content.length > 60 
+                        ? corpus.content.substring(0, 60) + '...' 
                         : corpus.content}
                     </div>
                   </div>
@@ -285,44 +278,44 @@ export function CorpusManager({ config, onConfigChange, onClose }: CorpusManager
           {/* 右侧：编辑区域 */}
           <div className="flex-1 flex flex-col">
             {editingCorpus ? (
-              <div className="flex-1 flex flex-col p-4">
-                <div className="mb-4">
-                  <h3 className="text-lg font-medium mb-2">
+              <div className="flex-1 flex flex-col p-6">
+                <div className="mb-6">
+                  <h3 className="text-lg font-medium text-gray-900 mb-3">
                     {editingCorpus.id ? '编辑' : '添加'}{activeTab === 'initial' ? '首发' : '强调'}语料
                   </h3>
                   
                   {activeTab === 'initial' && (
-                    <div className="text-sm text-gray-600 mb-3 p-2 bg-blue-50 rounded">
-                      💡 首发语料会在每次新对话开始时自动发送给AI，用于设定角色、背景或特殊指令
+                    <div className="text-sm text-gray-600 p-3 bg-gray-50 border-l-4 border-blue-500">
+                      首发语料会在每次新对话开始时自动发送给AI，用于设定角色、背景或特殊指令
                     </div>
                   )}
                   
                   {activeTab === 'emphasis' && (
-                    <div className="text-sm text-gray-600 mb-3 p-2 bg-yellow-50 rounded">
-                      ⚠️ 强调语料会在每次发送消息时夹带，在用户界面不可见，但AI可以看到
+                    <div className="text-sm text-gray-600 p-3 bg-gray-50 border-l-4 border-orange-500">
+                      强调语料会在每次发送消息时夹带，在用户界面不可见，但AI可以看到
                     </div>
                   )}
                 </div>
 
                 {error && (
-                  <div className="mb-4 p-2 bg-red-50 text-red-600 rounded">
+                  <div className="mb-4 p-3 bg-red-50 text-red-700 text-sm rounded-md border border-red-200">
                     {error}
                   </div>
                 )}
 
-                <div className="mb-4">
-                  <label className="block text-sm font-medium mb-1">语料名称</label>
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">语料名称</label>
                   <input
                     type="text"
                     value={editingCorpus.name}
                     onChange={(e) => setEditingCorpus({ ...editingCorpus, name: e.target.value })}
                     placeholder="给语料起个名字..."
-                    className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:border-blue-500"
                   />
                 </div>
 
                 <div className="flex-1 flex flex-col">
-                  <label className="block text-sm font-medium mb-1">语料内容</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">语料内容</label>
                   <textarea
                     value={editingCorpus.content}
                     onChange={(e) => setEditingCorpus({ ...editingCorpus, content: e.target.value })}
@@ -331,35 +324,34 @@ export function CorpusManager({ config, onConfigChange, onClose }: CorpusManager
                         ? '输入首发语料内容，如角色设定、背景信息等...'
                         : '输入强调语料内容，每次对话都会包含...'
                     }
-                    className="flex-1 p-2 border rounded resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm resize-none focus:outline-none focus:border-blue-500"
                   />
-                  <div className="text-xs text-gray-500 mt-1">
-                    {editingCorpus.content.length}/2000 字符
+                  <div className="text-xs text-gray-500 mt-2 text-right">
+                    {editingCorpus.content.length}/2000
                   </div>
                 </div>
 
-                <div className="flex gap-2 mt-4">
+                <div className="flex gap-3 mt-6 pt-4 border-t border-gray-200">
                   <button
                     onClick={saveCorpus}
                     disabled={!editingCorpus.name.trim() || !editingCorpus.content.trim()}
-                    className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
+                    className="px-6 py-2 bg-blue-600 text-white text-sm rounded-md transition-colors hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     保存
                   </button>
                   <button
                     onClick={cancelEdit}
-                    className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+                    className="px-6 py-2 bg-gray-200 text-gray-700 text-sm rounded-md transition-colors hover:bg-gray-300"
                   >
                     取消
                   </button>
                 </div>
               </div>
             ) : (
-              <div className="flex-1 flex items-center justify-center text-gray-500">
-                <div className="text-center">
-                  <div className="text-4xl mb-4">📝</div>
-                  <div>选择左侧的语料进行编辑</div>
-                  <div className="text-sm mt-2">或点击"添加语料"创建新的语料</div>
+              <div className="flex-1 flex items-center justify-center">
+                <div className="text-center text-gray-500">
+                  <div className="text-lg mb-2">选择左侧语料进行编辑</div>
+                  <div className="text-sm">或点击"添加语料"创建新的语料</div>
                 </div>
               </div>
             )}
