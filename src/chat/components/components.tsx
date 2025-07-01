@@ -14,7 +14,7 @@ const AnimatedDots = ({ size = 'sm', color = 'blue' }: { size?: 'sm' | 'md'; col
   }
   
   return (
-    <div className="flex gap-1">
+    <div className="flex items-center justify-center gap-1">
       {[0, 0.1, 0.2].map((delay, i) => (
         <div 
           key={i}
@@ -243,7 +243,7 @@ export function MessageBubble({
                   </div>
                   <div className="text-xs text-gray-600 font-mono leading-relaxed whitespace-pre-wrap bg-white/50 rounded-lg p-3">
                     {currentThinking}
-                    <span className="inline-block w-2 h-4 bg-blue-500 animate-pulse ml-1 rounded-sm" />
+                    <span className="inline-block w-2 h-4 bg-blue-500 animate-pulse ml-1 rounded-sm align-middle" />
                   </div>
                 </div>
               )}
@@ -262,12 +262,12 @@ export function MessageBubble({
           
           {/* 消息内容容器 */}
           {isUser ? (
-            /* 用户消息 - 气泡样式 */
-            <div className={`relative group ${isEditing ? 'w-full' : ''}`}>
+            /* 用户消息 - 简洁样式 */
+            <div className={`${isEditing ? 'w-full' : ''}`}>
               <div className={`${
                 isEditing 
                   ? 'bg-blue-50 border-2 border-blue-200 rounded-2xl p-4' 
-                  : 'bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-2xl rounded-br-md px-4 py-3 shadow-md hover:shadow-lg transition-shadow duration-200'
+                  : 'bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-2xl px-4 py-3 shadow-md hover:shadow-lg transition-shadow duration-200'
               }`}>
                 {isEditing ? (
                   <div className="space-y-3">
@@ -306,11 +306,6 @@ export function MessageBubble({
                   <div className="whitespace-pre-wrap leading-relaxed">{node.content}</div>
                 )}
               </div>
-              
-              {/* 用户消息尾巴 */}
-              {!isEditing && (
-                <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-blue-700 transform rotate-45" />
-              )}
             </div>
           ) : (
             /* AI消息 - 卡片样式 */
@@ -320,7 +315,7 @@ export function MessageBubble({
                   currentAnswer ? (
                     <div className="text-gray-800 leading-relaxed whitespace-pre-wrap">
                       {currentAnswer}
-                      <span className="inline-block w-2 h-5 bg-blue-500 animate-pulse ml-1 rounded-sm" />
+                      <span className="inline-block w-2 h-5 bg-blue-500 animate-pulse ml-1 rounded-sm align-middle" />
                     </div>
                   ) : (
                     <div className="flex items-center gap-3 p-6 bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl">
