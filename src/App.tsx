@@ -5,9 +5,11 @@ type PageType = 'home' | 'chat'
 
 function App() {
   const [currentPage, setCurrentPage] = useState<PageType>('home')
+  const [chatKey, setChatKey] = useState<number>(0) // 添加chatKey状态
 
   const handleEnterChat = () => {
     setCurrentPage('chat')
+    setChatKey(prev => prev + 1) // 每次进入聊天时更新key，强制重新创建组件
   }
 
   const handleBackToHome = () => {
@@ -15,7 +17,7 @@ function App() {
   }
 
   if (currentPage === 'chat') {
-    return <ChatPage onBack={handleBackToHome} />
+    return <ChatPage key={chatKey} onBack={handleBackToHome} />
   }
 
   return (

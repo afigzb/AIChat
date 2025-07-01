@@ -111,7 +111,7 @@ export function useConversationManager(
 ) {
   // 核心状态：对话树
   const [conversationTree, setConversationTree] = useState<ConversationTree>(() =>
-    createInitialConversationTree(initialWelcomeMessage || '你好！这里是个人ai聊天工具，调用deepseekapi接口，纯前端设计，无保存对话功能')
+    createInitialConversationTree(initialWelcomeMessage || '')
   )
 
   // UI交互状态
