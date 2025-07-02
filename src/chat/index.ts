@@ -15,5 +15,5 @@ export * from './managers/conversation-manager.ts'
 export * from './managers/branch-manager.ts'
 
 // 导出UI组件
-export * from './components/components.tsx'
+export * from './components/components.tsx' 
 export { MarkdownRenderer } from './components/MarkdownRenderer' 

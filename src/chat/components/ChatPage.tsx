@@ -25,44 +25,49 @@ function Header({
   showCorpus: boolean
 }) {
   return (
-    <header className="bg-white border-b sticky border-gray-200 px-6 py-4 top-0 z-40">
-      <div className="flex items-center gap-2 absolute left-4 top-1/2 -translate-y-1/2">
-      <button
-        onClick={onSettingsClick}
-          className={`p-2 rounded-lg transition-all duration-200 ${
-          showSettings 
-            ? 'bg-blue-600 text-white' 
-            : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
-        }`}
-        title="设置"
-      >
-        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-          <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd"/>
-        </svg>
-      </button>
-        
-        <button
-          onClick={onCorpusClick}
-          className={`p-2 rounded-lg transition-all duration-200 ${
-            showCorpus 
-              ? 'bg-green-600 text-white' 
-              : 'text-gray-600 hover:text-green-600 hover:bg-green-50'
-          }`}
-          title="语料管理"
-        >
-          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd"/>
-          </svg>
-        </button>
-      </div>
-      
+    <header className="bg-white border-b border-slate-200 px-6 py-4 sticky top-0 z-40">
       <div className="max-w-4xl mx-auto flex items-center justify-between">
+        {/* 左侧：标题 */}
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
-            className="font-semibold text-gray-900 hover:text-gray-600 transition-colors"
+            className="flex items-center gap-2 text-slate-800 hover:text-slate-600 transition-colors"
           >
-            DeepSeek Assistant
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            <span className="font-medium">AI助手</span>
+          </button>
+        </div>
+        
+        {/* 右侧：工具按钮 */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onCorpusClick}
+            className={`p-2 rounded-xl transition-colors ${
+              showCorpus 
+                ? 'bg-teal-500 text-white' 
+                : 'text-slate-600 hover:text-teal-600 hover:bg-teal-50'
+            }`}
+            title="语料管理"
+          >
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd"/>
+            </svg>
+          </button>
+          
+          <button
+            onClick={onSettingsClick}
+            className={`p-2 rounded-xl transition-colors ${
+              showSettings 
+                ? 'bg-teal-500 text-white' 
+                : 'text-slate-600 hover:text-teal-600 hover:bg-teal-50'
+            }`}
+            title="设置"
+          >
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd"/>
+            </svg>
           </button>
         </div>
       </div>
@@ -109,7 +114,7 @@ export default function ChatPage({ onBack }: ChatPageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-slate-50">
       {/* 设置侧边栏 - 绝对定位 */}
       <AISettings
         config={config}

@@ -6,12 +6,11 @@ import { MarkdownRenderer } from './MarkdownRenderer'
 // ===== 公共组件 =====
 
 // 动画点组件 - 统一的加载动画
-const AnimatedDots = ({ size = 'sm', color = 'blue' }: { size?: 'sm' | 'md'; color?: 'blue' | 'gray' | 'purple' }) => {
+const AnimatedDots = ({ size = 'sm', color = 'slate' }: { size?: 'sm' | 'md'; color?: 'teal' | 'slate' }) => {
   const dotSize = size === 'sm' ? 'w-1.5 h-1.5' : 'w-2 h-2'
   const colorClasses = {
-    blue: 'bg-blue-500',
-    gray: 'bg-gray-400', 
-    purple: 'bg-purple-500'
+    teal: 'bg-teal-500',
+    slate: 'bg-slate-400'
   }
   
   return (
@@ -75,27 +74,27 @@ function BranchNavigation({ navigation, onNavigate }: {
       <button
         onClick={() => onNavigate('left')}
         disabled={!navigation.canNavigateLeft}
-        className={`p-1 rounded ${
+        className={`p-1 rounded-lg transition-colors ${
           navigation.canNavigateLeft 
-            ? 'text-gray-500 hover:text-gray-700' 
-            : 'text-gray-300 cursor-not-allowed'
+            ? 'text-slate-500 hover:text-slate-700 hover:bg-slate-100' 
+            : 'text-slate-300 cursor-not-allowed'
         }`}
         title="上一个分支"
       >
         <Icon name="chevronLeft" className="w-3 h-3" />
       </button>
       
-      <span className="px-2 py-0.5 text-gray-500 font-medium min-w-[2.5rem] text-center">
+      <span className="px-3 py-1 text-slate-600 font-medium bg-slate-100 rounded-lg min-w-[3rem] text-center">
         {navigation.currentIndex + 1}/{navigation.totalBranches}
       </span>
       
       <button
         onClick={() => onNavigate('right')}
         disabled={!navigation.canNavigateRight}
-        className={`p-1 rounded ${
+        className={`p-1 rounded-lg transition-colors ${
           navigation.canNavigateRight 
-            ? 'text-gray-500 hover:text-gray-700' 
-            : 'text-gray-300 cursor-not-allowed'
+            ? 'text-slate-500 hover:text-slate-700 hover:bg-slate-100' 
+            : 'text-slate-300 cursor-not-allowed'
         }`}
         title="下一个分支"
       >
@@ -115,14 +114,14 @@ export function ModelToggle({ currentMode, onModeChange, disabled }: {
     <button
       onClick={() => onModeChange(currentMode === 'v3' ? 'r1' : 'v3')}
       disabled={disabled}
-      className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-sm transition-all ${
+      className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-sm font-medium transition-colors ${
         disabled 
-          ? 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed' 
-          : 'border-gray-200 hover:border-gray-300 bg-white hover:bg-gray-50'
+          ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed' 
+          : 'border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 text-slate-700'
       }`}
     >
-      <div className={`w-2 h-2 rounded-full ${currentMode === 'r1' ? 'bg-gray-600' : 'bg-blue-500'}`} />
-      <span className="font-medium text-gray-700">{currentMode.toUpperCase()}</span>
+      <div className={`w-2 h-2 rounded-full ${currentMode === 'r1' ? 'bg-slate-600' : 'bg-teal-500'}`} />
+      <span>{currentMode.toUpperCase()}</span>
     </button>
   )
 }
@@ -134,14 +133,14 @@ function ThinkingContent({ content, isExpanded, onToggle }: {
   onToggle: () => void
 }) {
   return (
-    <div className="mb-4 w-full bg-gradient-to-r from-gray-50 to-blue-50 border border-gray-200 rounded-xl p-4 shadow-sm">
+    <div className="mb-6 w-full bg-slate-50 border border-slate-200 rounded-2xl p-5">
       <button
         onClick={onToggle}
-        className="flex items-center gap-2 mb-3 w-full text-left"
+        className="flex items-center gap-3 mb-4 w-full text-left"
       >
-        <div className="w-2 h-2 bg-purple-500 rounded-full" />
-        <span className="text-sm font-medium text-gray-700">💭 思考过程</span>
-        <div className="ml-auto flex items-center gap-2 text-xs text-gray-500">
+        <div className="w-2 h-2 bg-teal-500 rounded-full" />
+        <span className="text-sm font-medium text-slate-700">💭 思考过程</span>
+        <div className="ml-auto flex items-center gap-2 text-xs text-slate-500">
           <span>{isExpanded ? '收起' : '展开'}</span>
           <div className={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}>
             <Icon name="chevronDown" className="w-4 h-4" />
@@ -150,7 +149,7 @@ function ThinkingContent({ content, isExpanded, onToggle }: {
       </button>
       
       {isExpanded && (
-        <div className="text-sm text-gray-700 font-mono leading-relaxed whitespace-pre-wrap bg-white/50 rounded-lg p-3 overflow-y-auto">
+        <div className="text-sm text-slate-700 font-mono leading-relaxed whitespace-pre-wrap bg-white rounded-xl p-4 border border-slate-200">
           {content}
         </div>
       )}
@@ -192,7 +191,7 @@ export function MessageBubble({
   
   return (
     <div 
-      className={`w-full max-w-5xl mx-auto px-4 py-3 transition-all duration-200 ${
+      className={`w-full max-w-4xl mx-auto px-6 py-6 transition-opacity duration-200 ${
         isInActivePath ? '' : 'opacity-40 pointer-events-none'
       }`}
       onMouseEnter={() => setIsHovered(true)}
@@ -202,22 +201,22 @@ export function MessageBubble({
         {/* AI头像 */}
         {!isUser && (
           <div className="flex-shrink-0 mt-1">
-            <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center shadow-sm">
+            <div className="w-9 h-9 bg-teal-500 rounded-2xl flex items-center justify-center">
               <span className="text-white text-sm font-medium">AI</span>
             </div>
           </div>
         )}
 
-        <div className={`flex-1 max-w-[75%] ${isUser ? 'items-end' : 'items-start'} flex flex-col`}>
+        <div className={`flex-1 max-w-[80%] ${isUser ? 'items-end' : 'items-start'} flex flex-col`}>
           {/* 用户标识和状态 */}
-          <div className={`flex items-center mb-2 gap-2 ${isUser ? 'justify-end' : 'justify-start'}`}>
+          <div className={`flex items-center mb-3 gap-3 ${isUser ? 'justify-end' : 'justify-start'}`}>
             <div className="flex items-center gap-2">
-              <span className={`text-sm font-medium ${isUser ? 'text-blue-600' : 'text-gray-700'}`}>
+              <span className={`text-sm font-medium ${isUser ? 'text-teal-600' : 'text-slate-700'}`}>
                 {isUser ? 'You' : 'DeepSeek'}
               </span>
               {!isUser && isGenerating && (
-                <div className="flex items-center gap-1 px-2 py-1 bg-emerald-100 text-emerald-700 text-xs rounded-full border border-emerald-200">
-                  <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+                <div className="flex items-center gap-2 px-3 py-1 bg-teal-50 text-teal-700 text-xs rounded-full border border-teal-200">
+                  <div className="w-1.5 h-1.5 bg-teal-500 rounded-full animate-pulse" />
                   <span>正在回复</span>
                 </div>
               )}
@@ -225,7 +224,7 @@ export function MessageBubble({
             
             {/* 时间戳 - 只在hover时显示 */}
             {node.content !== '正在生成...' && (
-              <div className={`text-xs text-gray-400 transition-opacity duration-200 ${
+              <div className={`text-xs text-slate-400 transition-opacity duration-200 ${
                 isHovered ? 'opacity-100' : 'opacity-0'
               }`}>
                 {node.timestamp.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}
@@ -237,19 +236,19 @@ export function MessageBubble({
           {!isUser && (
             <>
               {isGenerating && currentThinking && showThinking && (
-                <div className="mb-4 w-full bg-gradient-to-r from-gray-50 to-blue-50 border border-gray-200 rounded-xl p-4 shadow-sm">
-                  <div className="flex items-center gap-2 mb-3">
-                    <AnimatedDots color="blue" />
-                    <span className="text-sm font-medium text-gray-700">💭 正在思考</span>
+                <div className="mb-6 w-full bg-slate-50 border border-slate-200 rounded-2xl p-5">
+                  <div className="flex items-center gap-3 mb-4">
+                    <AnimatedDots color="teal" />
+                    <span className="text-sm font-medium text-slate-700">💭 正在思考</span>
                   </div>
-                  <div className="text-xs text-gray-600 font-mono leading-relaxed whitespace-pre-wrap bg-white/50 rounded-lg p-3">
+                  <div className="text-xs text-slate-600 font-mono leading-relaxed whitespace-pre-wrap bg-white rounded-xl p-4 border border-slate-200">
                     {currentThinking}
                   </div>
                 </div>
               )}
               
               {!isGenerating && node.reasoning_content && (
-                <div className="mb-4 w-full">
+                <div className="mb-6 w-full">
                   <ThinkingContent
                     content={node.reasoning_content}
                     isExpanded={showThinkingExpanded}
@@ -266,11 +265,11 @@ export function MessageBubble({
             <div className={`${isEditing ? 'w-full' : ''}`}>
               <div className={`${
                 isEditing 
-                  ? 'bg-blue-50 border-2 border-blue-200 rounded-2xl p-4' 
-                  : 'bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-2xl px-4 py-3 shadow-md hover:shadow-lg transition-shadow duration-200'
+                  ? 'bg-teal-50 border border-teal-200 rounded-2xl p-4' 
+                  : 'bg-teal-500 text-white rounded-2xl px-5 py-3'
               }`}>
                 {isEditing ? (
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     <textarea
                       value={editContent}
                       onChange={(e) => setEditContent(e.target.value)}
@@ -282,21 +281,21 @@ export function MessageBubble({
                           handleEditCancel()
                         }
                       }}
-                      className="w-full bg-white text-gray-900 placeholder-gray-500 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                      className="w-full bg-white text-slate-900 placeholder-slate-500 border border-slate-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none"
                       placeholder="修改消息内容..."
                       rows={Math.max(2, editContent.split('\n').length)}
                       autoFocus
                     />
-                    <div className="flex gap-2 justify-end">
+                    <div className="flex gap-3 justify-end">
                       <button 
                         onClick={handleEditCancel} 
-                        className="px-3 py-1.5 text-gray-600 hover:text-gray-800 text-sm rounded-md transition-colors"
+                        className="px-4 py-2 text-slate-600 hover:text-slate-800 text-sm rounded-lg transition-colors"
                       >
                         取消
                       </button>
                       <button 
                         onClick={handleEditSave} 
-                        className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-md transition-colors shadow-sm"
+                        className="px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white text-sm rounded-lg transition-colors"
                       >
                         保存并重新生成
                       </button>
@@ -309,23 +308,23 @@ export function MessageBubble({
             </div>
           ) : (
             /* AI消息 - 卡片样式 */
-            <div className="w-full bg-white border border-gray-200 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden">
-              <div className="p-4">
+            <div className="w-full bg-white border border-slate-200 rounded-2xl overflow-hidden">
+              <div className="p-6">
                 {isGenerating ? (
                   currentAnswer ? (
-                    <div className="text-gray-800 leading-relaxed">
+                    <div className="text-slate-800 leading-relaxed">
                       <MarkdownRenderer content={currentAnswer} />
                     </div>
                   ) : (
-                    <div className="flex items-center gap-3 p-6 bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl">
-                      <AnimatedDots size="md" color="blue" />
-                      <span className="text-gray-600">正在准备回复...</span>
+                    <div className="flex items-center gap-4 p-8 bg-slate-50 rounded-xl">
+                      <AnimatedDots size="md" color="teal" />
+                      <span className="text-slate-600">正在准备回复...</span>
                     </div>
                   )
                 ) : (
                   <MarkdownRenderer 
                     content={node.content} 
-                    className="text-gray-800 leading-relaxed text-[15px]" 
+                    className="text-slate-800 leading-relaxed text-[15px]" 
                   />
                 )}
               </div>
@@ -333,7 +332,7 @@ export function MessageBubble({
           )}
           
           {/* 底部操作控件 */}
-          <div className={`flex items-center gap-3 mt-3 transition-all duration-200 ${
+          <div className={`flex items-center gap-4 mt-4 transition-opacity duration-200 ${
             isHovered || showBranchControls ? 'opacity-100' : 'opacity-0'
           } ${isUser ? 'justify-end' : 'justify-start'}`}>
             {/* 分支导航 */}
@@ -345,7 +344,7 @@ export function MessageBubble({
             {!isUser && !isGenerating && onRegenerate && (
               <button
                 onClick={() => onRegenerate(node.id)}
-                className="flex items-center gap-1 px-2 py-1 text-xs text-gray-500 hover:text-blue-600 rounded transition-colors"
+                className="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-500 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
                 title="重新生成回答"
               >
                 <Icon name="regenerate" className="w-3 h-3" />
@@ -359,7 +358,7 @@ export function MessageBubble({
                   setEditContent(node.content)
                   setIsEditing(true)
                 }}
-                className="flex items-center gap-1 px-2 py-1 text-xs text-gray-500 hover:text-blue-600 rounded transition-colors"
+                className="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-500 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
                 title="修改消息并重新生成"
               >
                 <Icon name="edit" className="w-3 h-3" />
@@ -372,7 +371,7 @@ export function MessageBubble({
         {/* 用户头像 */}
         {isUser && (
           <div className="flex-shrink-0 mt-1">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-sm">
+            <div className="w-9 h-9 bg-teal-500 rounded-2xl flex items-center justify-center">
               <span className="text-white text-sm font-medium">U</span>
             </div>
           </div>
@@ -403,11 +402,11 @@ function Slider({
   formatValue?: (value: number) => string
 }) {
   return (
-    <div className="space-y-2">
-      <label className="block text-xs font-medium text-gray-600">
+    <div className="space-y-3">
+      <label className="block text-sm font-medium text-slate-700">
         {label} ({formatValue(value)})
       </label>
-      <div className="px-3 py-2 bg-gray-50 rounded-lg">
+      <div className="px-4 py-3 bg-slate-50 rounded-xl border border-slate-200">
         <input
           type="range"
           min={min}
@@ -415,10 +414,10 @@ function Slider({
           step={step}
           value={value}
           onChange={(e) => onChange(parseFloat(e.target.value))}
-          className="w-full accent-blue-600"
+          className="w-full accent-teal-500"
         />
         {marks && (
-          <div className="flex justify-between text-xs text-gray-500 mt-1">
+          <div className="flex justify-between text-xs text-slate-500 mt-2">
             {marks.map((mark, i) => <span key={i}>{mark}</span>)}
           </div>
         )}
@@ -435,31 +434,31 @@ export function AISettings({ config, onConfigChange, onClose, isOpen }: {
   isOpen: boolean
 }) {
   return (
-    <div className={`fixed top-0 left-0 h-full w-80 bg-white shadow-2xl z-50 border-r border-gray-200 transition-transform duration-300 ${
+    <div className={`fixed top-0 left-0 h-full w-80 bg-white z-50 border-r border-slate-200 transition-transform duration-300 ${
       isOpen ? 'translate-x-0' : '-translate-x-full'
     }`}>
       <div className="flex flex-col h-full">
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+        <div className="flex items-center justify-between p-4 border-b border-slate-200">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center">
+            <div className="w-9 h-9 rounded-2xl bg-teal-500 flex items-center justify-center">
               <Icon name="settings" className="w-5 h-5 text-white" />
             </div>
-            <h2 className="text-lg font-semibold text-gray-900">模型设置</h2>
+            <h2 className="text-lg font-semibold text-slate-900">模型设置</h2>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors"
+            className="w-8 h-8 rounded-xl hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors"
           >
             <Icon name="close" className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto p-6 space-y-8">
           {/* V3配置 */}
-          <div className="space-y-3">
+          <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-blue-500" />
-              <h3 className="text-sm font-semibold text-gray-900">DeepSeek-V3 配置</h3>
+              <div className="w-2 h-2 rounded-full bg-teal-500" />
+              <h3 className="text-sm font-semibold text-slate-900">DeepSeek-V3 配置</h3>
             </div>
             
             <Slider
@@ -483,18 +482,18 @@ export function AISettings({ config, onConfigChange, onClose, isOpen }: {
                 v3Config: { ...config.v3Config, maxTokens }
               })}
               min={100}
-              max={64000}
+              max={8000}
               step={100}
-              marks={['100', '32K 推荐', '64K 最大']}
+              marks={['100', '4K 推荐', '8K 最大']}
               formatValue={(v) => v.toLocaleString() + ' tokens'}
             />
           </div>
 
           {/* R1配置 */}
-          <div className="space-y-3">
+          <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-gray-600" />
-              <h3 className="text-sm font-semibold text-gray-900">DeepSeek-R1 配置</h3>
+              <div className="w-2 h-2 rounded-full bg-slate-600" />
+              <h3 className="text-sm font-semibold text-slate-900">DeepSeek-R1 配置</h3>
             </div>
             
             <Slider
@@ -513,27 +512,27 @@ export function AISettings({ config, onConfigChange, onClose, isOpen }: {
           </div>
 
           {/* 显示设置 */}
-          <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-gray-900">💭 显示设置</h3>
-            <label className="flex items-center justify-between p-3 rounded-lg border cursor-pointer hover:bg-gray-50">
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold text-slate-900">💭 显示设置</h3>
+            <label className="flex items-center justify-between p-4 rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-50 transition-colors">
               <div>
-                <span className="font-medium text-gray-900">显示思考过程</span>
-                <p className="text-xs text-gray-600">在R1模式下显示AI的推理步骤</p>
+                <span className="font-medium text-slate-900">显示思考过程</span>
+                <p className="text-xs text-slate-600 mt-1">在R1模式下显示AI的推理步骤</p>
               </div>
               <input
                 type="checkbox"
                 checked={config.showThinking}
                 onChange={(e) => onConfigChange({ ...config, showThinking: e.target.checked })}
-                className="w-4 h-4 text-blue-600 border-2 border-gray-300 rounded"
+                className="w-4 h-4 text-teal-600 border-2 border-slate-300 rounded"
               />
             </label>
           </div>
         </div>
 
-        <div className="p-6 border-t border-gray-200">
+        <div className="p-6 border-t border-slate-200">
           <button
             onClick={() => onConfigChange(DEFAULT_CONFIG)}
-            className="w-full px-4 py-3 text-gray-600 border border-gray-300 rounded-xl hover:bg-gray-50 transition-all font-medium"
+            className="w-full px-4 py-3 text-slate-600 border border-slate-300 rounded-xl hover:bg-slate-50 transition-colors font-medium"
           >
             重置为默认设置
           </button>
@@ -588,9 +587,9 @@ export function ChatInputArea({
   const canSend = !isLoading && value.trim()
 
   return (
-    <div className="bg-white sticky bottom-0">
-      <div className="max-w-4xl mx-auto p-6">
-        <div className="border border-gray-200 rounded-2xl bg-white shadow-sm hover:shadow-md focus-within:shadow-md focus-within:border-gray-400 transition-all">
+    <div className="sticky bottom-0">
+      <div className="max-w-4xl mx-auto p-6 pt-0 bg-slate-50">
+        <div className="border border-slate-200 rounded-2xl bg-white focus-within:border-teal-300 transition-colors">
           <div className="p-4">
             <textarea
               ref={textareaRef}
@@ -601,19 +600,19 @@ export function ChatInputArea({
               }}
               onKeyPress={handleKeyPress}
               placeholder="发送消息给 DeepSeek Assistant..."
-              className="w-full bg-transparent border-none focus:outline-none resize-none placeholder-gray-500 text-gray-900 leading-relaxed min-h-[60px] max-h-[150px]"
+              className="w-full bg-transparent border-none focus:outline-none resize-none placeholder-slate-500 text-slate-900 leading-relaxed min-h-[60px] max-h-[150px]"
               disabled={isLoading}
             />
           </div>
 
-          <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 bg-gray-50 rounded-b-2xl">
-            <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between px-4 py-3 border-t border-slate-100 bg-slate-50 rounded-b-2xl">
+            <div className="flex items-center gap-4">
               <ModelToggle currentMode={currentMode} onModeChange={onModeChange} disabled={isLoading} />
               
               {isLoading && (
                 <div className="flex items-center gap-2">
-                  <AnimatedDots size="sm" color="gray" />
-                  <span className="text-xs text-gray-500">AI正在回复中...</span>
+                  <AnimatedDots size="sm" color="slate" />
+                  <span className="text-xs text-slate-500">AI正在回复中...</span>
                 </div>
               )}
             </div>
@@ -621,12 +620,12 @@ export function ChatInputArea({
             <button
               onClick={isLoading ? onAbort : onSend}
               disabled={!isLoading && !canSend}
-              className={`px-4 py-2 rounded-lg transition-all text-sm font-medium flex items-center gap-2 ${
+              className={`px-5 py-2.5 rounded-xl transition-colors text-sm font-medium flex items-center gap-2 ${
                 isLoading 
-                  ? 'bg-gray-600 text-white hover:bg-gray-700'
+                  ? 'bg-slate-600 text-white hover:bg-slate-700'
                   : canSend
-                    ? 'bg-gray-900 text-white hover:bg-gray-800'
-                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                    ? 'bg-teal-500 text-white hover:bg-teal-600'
+                    : 'bg-slate-200 text-slate-400 cursor-not-allowed'
               }`}
             >
               <Icon name={isLoading ? 'stop' : 'send'} />

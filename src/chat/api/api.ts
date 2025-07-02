@@ -9,10 +9,10 @@ const API_BASE_URL = 'https://api.deepseek.com/v1/chat/completions'
 export const DEFAULT_CONFIG: AIConfig = {
   v3Config: {
     temperature: 1.0,    // 创造性参数，越高越创新
-    maxTokens: 32000     // 最大输出长度
+    maxTokens: 8000      // 最大输出长度 - V3模式限制为8K
   },
   r1Config: {
-    maxTokens: 32000     // R1模式最大输出长度
+    maxTokens: 32000     // R1模式最大输出长度 - R1模式默认32K，最大64K
   },
   showThinking: true,    // 是否显示思考过程
   corpus: loadCorpusConfigFromDataJson()  // 从 data.json 加载语料配置
