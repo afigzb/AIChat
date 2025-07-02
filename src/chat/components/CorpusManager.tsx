@@ -327,7 +327,7 @@ export function CorpusManager({ config, onConfigChange, onClose }: CorpusManager
                     className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm resize-none focus:outline-none focus:border-blue-500"
                   />
                   <div className="text-xs text-gray-500 mt-2 text-right">
-                    {editingCorpus.content.length}/2000
+                    {editingCorpus.content.length} 字符
                   </div>
                 </div>
 

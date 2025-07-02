@@ -135,10 +135,6 @@ export function validateCorpusContent(content: string): { valid: boolean; error?
     return { valid: false, error: '语料内容不能为空' }
   }
   
-  if (content.length > 2000) {
-    return { valid: false, error: '语料内容不能超过2000字符' }
-  }
-  
   return { valid: true }
 }
 
