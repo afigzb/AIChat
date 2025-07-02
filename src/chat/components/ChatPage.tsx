@@ -25,7 +25,7 @@ function Header({
   showCorpus: boolean
 }) {
   return (
-    <header className="bg-white border-b relative border-gray-200 px-6 py-4 top-0 z-40">
+    <header className="bg-white border-b sticky border-gray-200 px-6 py-4 top-0 z-40">
       <div className="flex items-center gap-2 absolute left-4 top-1/2 -translate-y-1/2">
       <button
         onClick={onSettingsClick}

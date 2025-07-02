@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import type { MessageNode, AIConfig, ChatMode, MessageBubbleProps, BranchNavigation } from '../data/types'
 import { DEFAULT_CONFIG } from '../api/api'
+import { MarkdownRenderer } from './MarkdownRenderer'
 
 // ===== 公共组件 =====
 
@@ -243,7 +244,6 @@ export function MessageBubble({
                   </div>
                   <div className="text-xs text-gray-600 font-mono leading-relaxed whitespace-pre-wrap bg-white/50 rounded-lg p-3">
                     {currentThinking}
-                    <span className="inline-block w-2 h-4 bg-blue-500 animate-pulse ml-1 rounded-sm align-middle" />
                   </div>
                 </div>
               )}
@@ -313,9 +313,8 @@ export function MessageBubble({
               <div className="p-4">
                 {isGenerating ? (
                   currentAnswer ? (
-                    <div className="text-gray-800 leading-relaxed whitespace-pre-wrap">
-                      {currentAnswer}
-                      <span className="inline-block w-2 h-5 bg-blue-500 animate-pulse ml-1 rounded-sm align-middle" />
+                    <div className="text-gray-800 leading-relaxed">
+                      <MarkdownRenderer content={currentAnswer} />
                     </div>
                   ) : (
                     <div className="flex items-center gap-3 p-6 bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl">
@@ -324,9 +323,10 @@ export function MessageBubble({
                     </div>
                   )
                 ) : (
-                  <div className="text-gray-800 leading-relaxed whitespace-pre-wrap text-[15px]">
-                    {node.content}
-                  </div>
+                  <MarkdownRenderer 
+                    content={node.content} 
+                    className="text-gray-800 leading-relaxed text-[15px]" 
+                  />
                 )}
               </div>
             </div>
@@ -485,7 +485,7 @@ export function AISettings({ config, onConfigChange, onClose, isOpen }: {
               min={100}
               max={64000}
               step={100}
-              marks={['100', '8K 推荐', '64K 最大']}
+              marks={['100', '32K 推荐', '64K 最大']}
               formatValue={(v) => v.toLocaleString() + ' tokens'}
             />
           </div>
@@ -507,7 +507,7 @@ export function AISettings({ config, onConfigChange, onClose, isOpen }: {
               min={100}
               max={64000}
               step={100}
-              marks={['100', '8K 推荐', '64K 最大']}
+              marks={['100', '32K 推荐', '64K 最大']}
               formatValue={(v) => v.toLocaleString() + ' tokens'}
             />
           </div>
